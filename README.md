@@ -1,3 +1,5 @@
+<img src="images/jochreLogo.png"  width="200">
+
 # Jochre Alto4 Editor
 
 The Jochre Alto4 editor is a graphical browser-based editor of Alto4 OCR layers, useful for constructing an Alto4 training corpus.
