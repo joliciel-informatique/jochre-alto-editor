@@ -1,0 +1,6 @@
+/* Sample local.css file for Yiddish */
+
+.rtl {
+  font-family: "David CLM", Narkisim, "Times New Roman", Times;
+  font-size: 16px;
+}

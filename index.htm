@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+  <link rel="stylesheet" type="text/css" href="main.css">
+  <title>Jochre Alto4 Editor</title>
+</head>
+<body>
+
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"
+        integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+        crossorigin="anonymous"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"
+        integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU="
+        crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js"
+        integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49"
+        crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js"
+        integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy"
+        crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/2.4.1/fabric.min.js"></script>
+<script src="https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/vkbeautify/vkbeautify.0.99.00.beta.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.0.943/pdf.min.js"></script>
+
+<script src="config.js"></script>
+<script src="config-local.js"></script>
+<script src="graphics.js"></script>
+<script src="edit.js"></script>
+<script src="load.js"></script>
+<script src="text.js"></script>
+<script src="export.js"></script>
+<div class="d-flex m-1">
+  <div class="row">
+    <div class="col"><img src="images/jochreLogo.png" style="width:120px;"/></div>
+    <div class="col"><h1>Jochre&nbsp;Alto4&nbsp;Editor</h1></div>
+  </div>
+</div>
+<div class="container-fluid" id="mainTable">
+  <div class="row m-1">
+    Image:&nbsp;<input type="file" id="imageFile"  accept="image/*" onchange="openImageFile(event, canvas)">
+  </div>
+  <div class="row m-1">
+    PDF:&nbsp;<input type="file" id="imageFile"  accept="application/pdf" onchange="openPDFFile(event)">&nbsp;
+    Page:&nbsp;<select  id="pdfPage"><option value="1">1</option></select>&nbsp;&nbsp;
+    <input type="button" id="loadPDF" value="Load" onclick="loadPDF()" />
+  </div>        <div class="row m-1">
+    Alto XML:&nbsp;<input type="file" id="altoFile"  accept="text/xml" onchange="openAltoFile(event, canvas, $('#pageNumber').val())">&nbsp;
+    Page:&nbsp;<select  id="altoPage"><option value="1">1</option></select>&nbsp;
+    <input type="button" id="loadAlto" value="Load" onclick="loadAlto()" />
+  </div>
+  <div class="row m-1">
+    Item type:&nbsp;
+    <input type="button" id="composedBlockEditor" value="Composed" onclick="workOnItems('composedBlock')" class="unpushed" />&nbsp;
+    <input type="button" id="illustrationEditor" value="Illustration" onclick="workOnItems('illustration')" class="unpushed" />&nbsp;
+    <input type="button" id="textBlockEditor" value="TextBlock" onclick="workOnItems('textBlock')" class="pushed" />&nbsp;
+    <input type="button" id="textLineEditor" value="Line" onclick="workOnItems('textLine')" class="unpushed" />&nbsp;
+    <input type="button" id="stringEditor" value="String" onclick="workOnItems('string')" class="unpushed" />&nbsp;
+    <input type="button" id="glyphEditor" value="Glyph" onclick="workOnItems('glyph')" class="unpushed" />&nbsp;
+    &nbsp;
+    <input type="checkBox" id="chkAllowAdd" checked="true" />&nbsp;Allow add?&nbsp;
+  </div>
+  <div class="row">
+    <div class="col-7" id="canvasCell">
+      <div class="container">
+        <div class="row m-1">
+          <div id="wrapper">
+            <canvas id="edit-canvas" width="1000" height="1500"></canvas>
+          </div>
+        </div>
+        <div class="row m-1">
+          <div class="col-2">
+            Zoom: <span id="zoom">100%</span>
+          </div>
+          <div class="col-10">
+            <div class="slidecontainer">
+              <input type="range" min="1" max="100" value="100" class="slider" id="slider" oninput="adjustZoom(event, this, canvas)">
+            </div>
+          </div>
+        </div>
+        <div class="row m-1">
+          <input type="checkbox" checked="true" id="chkCurrentPageOnly">Current page only?&nbsp;
+          <button id="export" onclick="exportAlto()" class="btn btn-primary">Export Alto</button>&nbsp;
+          <a id="exportImage" download="image.png" class="btn btn-secondary">Export Image</a>&nbsp;
+        </div>
+      </div>
+    </div>
+    <div class="col-5" id="textCell">
+      <ul class="nav nav-tabs" role="tablist">
+        <li class="nav-item"><a class="nav-link active" data-toggle="tab" role="tab" href="#propertiesTab">Properties</a></li>
+        <li class="nav-item"><a class="nav-link" data-toggle="tab" role="tab" href="#textTab">Text</a></li>
+      </ul>
+      <div class="tab-content">
+        <div id="propertiesTab" class="tab-pane fade show active mt-1" role="tabpanel">
+          <div class="container-fluid">
+            <div class="row">
+              <div class="col-5">Item: </div>
+              <div class="col-7" id="elementId"></div>
+            </div>
+            <div class="row">
+              <div class="col-5">Language: </div>
+              <div class="col-7"><input type="text" id="elementLang" onchange="saveProperty(this);"></div>
+            </div>
+            <div class="row">
+              <div class="col-5">Font family: </div>
+              <div class="col-7"><select id="fontFamily" onchange="saveProperty(this);"></select></div>
+            </div>
+            <div class="row">
+              <div class="col-5">Font type: </div>
+              <div class="col-7"><select id="fontType" onchange="saveProperty(this);"></select></div>
+            </div>
+            <div class="row">
+              <div class="col-5">Font style: </div>
+              <div class="col-7"><select id="fontStyle" onchange="saveProperty(this);"></select></div>
+            </div>
+            <div class="row">
+              <div class="col-5">Font width: </div>
+              <div class="col-7"><select id="fontWidth" onchange="saveProperty(this);"></select></div>
+            </div>
+            <div class="row">
+              <div class="col-5">Font size: </div>
+              <div class="col-7"><select id="fontSize" onchange="saveProperty(this);"></select></div>
+            </div>
+            <div class="row">
+              <div class="col-5">Structure tag: </div>
+              <div class="col-7"><select id="structureTag" onchange="saveProperty(this);"></select></div>
+            </div>
+            <div class="row">
+              <div class="col-5">Layout tag: </div>
+              <div class="col-7"><select id="layoutTag" onchange="saveProperty(this);"></select></div>
+            </div>
+            <div class="row">
+              <div class="col-5">Rotation: </div>
+              <div class="col-7" id="rotation">0.0</div>
+            </div>
+            <div class="row">
+              <input type="button" id="delete" value="Delete" onclick="deleteSelected()" />&nbsp;
+              <input type="button" id="ungroup" class="collapse" value="Ungroup" onclick="ungroupSelected()" />&nbsp;
+            </div>
+            <div class="row">
+              <div class="col-12"><hr></div>
+            </div>
+            <div class="row">
+              <div class="col-12"><input type="button" id="btnExtendModal" value="Extend strings..."></div>
+            </div>
+            <div class="row border mt-2">
+              <p>Approximate font sizes on page at current zoom. DPI: <input class="dpi" type="number" id="dpi" onchange="setDpi();" value="600" min="150" max="3000" step="50"></p>
+              <div class="container-fluid horizontalScroll">
+                <div class="row">
+                  <div class="col-2">9pt</div><div class="col-10 textSample"><span class="pt9">Lorem ipsum dolor sit amet</span></div>
+                </div>
+                <div class="row">
+                  <div class="col-2">12pt</div><div class="col-10 textSample"><span class="pt12">Lorem ipsum dolor sit amet</span></div>
+                </div>
+                <div class="row">
+                  <div class="col-2">14pt</div><div class="col-10 textSample"><span class="pt14">Lorem ipsum dolor sit amet</span></div>
+                </div>
+                <div class="row">
+                  <div class="col-2">18pt</div><div class="col-10 textSample"><span class="pt18">Lorem ipsum dolor sit amet</span></div>
+                </div>
+                <div class="row">
+                  <div class="col-2">24pt</div><div class="col-10 textSample"><span class="pt24">Lorem ipsum dolor sit amet</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="textTab" class="tab-pane fade mt-1" role="tabpanel">
+          <div class="container-fluid">
+            <div class="row">
+              <div class="col-3">Item: </div>
+              <div class="col-9" id="elementIdForText"></div>
+            </div>
+          </div>
+          <textarea id="elementText" value="" onkeyup="elementTextOnKeyUp(event, $('#currentContent'))" onchange="saveText()"></textarea>
+          <p><b>Content:</b></p>
+          <div id="currentContent">&nbsp;</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="extendModal" tabindex="-1" role="dialog" aria-labelledby="Extend strings" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Extend strings</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="frmPrefs" role="form" autocomplete="off">
+          <fieldset>
+            <div class="d-flex flex-row m-0 p-0">
+              <div class="form-group m-0 p-0">
+                <div class="input-group input-group-sm m-1">
+                  <label for="extendBy">Extend by&nbsp;</label>
+                  <input type="number" min="-50" max="50" step="1" id="extendBy" name="extendBy" class="form-control" value="5" placeholder="" />
+                </div>
+              </div>
+            </div>
+            <div class="d-flex flex-row m-0 p-0">
+              <div class="form-group m-0 p-0">
+                <div class="input-group input-group-sm m-1">
+                  <label for="extendBorder">Border to extend:&nbsp;</label>
+                  <select id="extendBorder"><option value="Right">Right</option><option value="Left">Left</option></select>
+                </div>
+              </div>
+            </div>
+          </fieldset>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+        <button id="btnExtendStrings" type="button" class="btn btn-primary">Extend</button>
+      </div>
+      <div id="alertExtendSuccess" class="alert alert-success alert-dismissible collapse" role="alert">
+        <strong>Strings extended.</strong>
+        <button type="button" class="close" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script id="main">
+let canvas;
+$(function() {
+  // create a wrapper around native canvas element (with id="c")
+  canvas = new fabric.Canvas('edit-canvas');
+  canvas.uniScaleTransform = true;  // disable proportional scaling
+  canvas.selection = false; // disable group selection
+  canvas.on('mouse:down', mouseDownHandler);
+  canvas.on('mouse:move', mouseMoveHandler);
+  canvas.on('mouse:up', mouseUpHandler);
+  canvas.on('mouse:dblclick', mouseDblClickHandler);
+  canvas.on('before:transform', beforeTransformHandler);
+  canvas.on('object:modified', objectModifiedHandler);
+  canvas.on('selection:cleared', selectionClearedHandler);
+  canvas.on('selection:created', selectionCreatedHandler);
+  canvas.on('selection:updated', selectionUpdatedHandler);
+  canvas.on('object:scaling', objectScalingHandler);
+});
+</script>
+</body>
+</html>
