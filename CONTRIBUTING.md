@@ -4,14 +4,14 @@
 
 * Make sure you have a [GitLab account](https://gitlab.com/users/sign_in).
 
-## Reporting issues
+## Submitting issues
 
 * Clearly describe the issue including steps to reproduce when it is a bug.
 * If applicable, include a URL where the issue occurred.
 
-## Submitting Changes
+## Submitting merge requests
 
-Before submitting code or related changes, please send a signed and scanned individual contributor license agreement to Joliciel Informatique: contact@joli-ciel.com
+Before submitting a merge request, please send a signed and scanned individual contributor license agreement to Joliciel Informatique: contact@joli-ciel.com
 
 If you are contributing as an employee, please make sure your employer sends a signed and scanned corporate contributor license agreement, with your name listed in schedule A.
 
