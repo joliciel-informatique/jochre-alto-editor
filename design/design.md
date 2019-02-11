@@ -23,8 +23,9 @@ ComposedBlocks are represented by a rectangle.
 
 ComposedBlocks may be:
 * Deleted, by selecting a ComposedBlock and pushing the Delete button.
-* Modified, by using the mouse.
-* Added, by clicking the mouse at a start corner, and dragging to the end corner. This is only available if "Allow add" is checked.
+* Modified, by using the mouse on the handles available along the ComposedBlock's edges and corners.
+* Added, by clicking the mouse at a start corner, and dragging to the end corner.
+This is only available if "Allow add" is checked.
 
 If a ComposedBlock is deleted:
 * The contained TextBlocks are not deleted - they are simply "ungrouped".
@@ -38,8 +39,10 @@ TextBlocks are represented as a rectangle.
 
 TextBlocks may be:
 * Deleted, by selecting a TextBlock and pushing the Delete button.
-* Modified, by using the mouse. They can only be modified in one direction (horizontal or vertical) at a time.
-* Added, by clicking the mouse at a start corner, and dragging to the end corner. This is only available if "Allow add" is checked.
+* Modified, by using the mouse on the handles found at the center of one of the edges.
+TextBlocks may only be modified in one direction (horizontal or vertical) at a time.
+* Added, by clicking the mouse at a start corner, and dragging to the end corner.
+This is only available if "Allow add" is checked.
 * Ungrouped from the containing ComposedBlock, by clicking on the "Ungroup" button.
 * TextBlocks may not be moved.
 
@@ -63,10 +66,14 @@ A TextLine is always associated with a TextBlock.
 A TextLine with no Strings spans the entire width of the TextBlock.
 A TextLine with Strings is as wide as all of its Strings.
 
+It is assumed that the value of the ALTO `BASELINE` refers to the y-coordinate at the TextLine's `HPOS`.
+
 TextLines may be:
 * Deleted,  selecting a TextLine and pushing the Delete button.
 * Moved up or down, by selecting a TextLine, and dragging it up and down with the mouse.
-* Added, by clicking anywhere inside an existing TextBlock. A TextLine will be added intersecting the click point. This is only available if "Allow add" is checked.
+* Added, by clicking anywhere inside an existing TextBlock.
+A TextLine will be added intersecting the click point.
+This is only available if "Allow add" is checked.
 
 If a TextLine is deleted:
 * All Strings inside it are deleted as well
@@ -83,15 +90,20 @@ If a TextLine is added:
 Strings are represented as a rectangle containing the string.
 A String is always associated with a TextLine.
 Its horizontal extension may not extend beyond the containing TextBlock.
-The top of the String is the top of the TextBlock for the first TextLine, and the bottom of the Strings on the previous TextLine for all remaining TextLines.
-Its vertical size is fixed to the distance from its TextLine to the TextLine immediately above it.
-If the TextLine is the highest one in a TextBlock, its vertical size is considered to be 1.25 times the distance from the TextLine to the TextBlock top.
-This results in Strings whose bottom is below the TextLine, such that approximately 25% of the String is below the TextLine and 75% above the TextLine.
+
+For the highest TextLine in a TextBlock, the top of the String is automatically set to the top of the TextBlock.
+For all other TextLines, the top of the String is automatically set to the bottom of the Strings contained in the TextLine immediately above it.
+
+For the highest TextLine in a TextBlock, the String's vertical size is set to be 1.25 times the distance from the TextLine to the TextBlock top.
+For all other TextLines, the String's vertical size is automatically set to the distance between its TextLine to the TextLine immediately above it.
+
+This results in Strings whose bottom is always below the TextLine, such that approximately 25% of the String is below the TextLine and 75% above the TextLine.
 
 Strings may be:
 * Deleted, by selecting a String, and pushing the Delete button.
 * Extended right or left, by selecting the String, and dragging the edge right or left.
-* Added, clicking and dragging the mouse over a horizontal span above an existing TextLine and below another TextLine or the TextBlock top.  This is only available if "Allow add" is checked.
+* Added, by clicking and dragging the mouse over a horizontal span above an existing TextLine and below another TextLine or the TextBlock top.
+This is only available if "Allow add" is checked.
 * Split, by double-clicking inside the String.
 
 If a String is deleted, all of the contained Glyphs are deleted as well.
@@ -129,7 +141,9 @@ Property changes are immediately applied to the currently selected element.
 Additional items in the properties menu include:
 * Delete: delete the current element - see the design for each element.
 * Extend strings: extend right or left borders for all strings by a certain number of real (unzoomed) pixels.
-* A list of approximate font sizes at the current zoom and a given DPI.
+* A list of sample text at different font sizes, approximating the size of text on the page in a given font size at the current zoom and a given DPI.
+This can guide the user in selecting the correct font size for a paragraph.
+The sample text will be found in `sampleText` in `config.js`.
 
 ## Text
 The text tab allows you to update the text associated with the currently selected element.
@@ -144,7 +158,7 @@ Text is stored internally on the String level only, and it is assumed that white
 Thus, if you have more words in a given line of text than the number of Strings in the corresponding TextLine, the text with no corresponding Strings will be lost.
 On the other hand, if a String has the wrong number of Glyphs, the text is not lost - it simply cannot be assigned correctly to the underlying glyphs on export.
 
-In order to help you align text with Strings and Glyphs, a read-only view below the text box shows any text which is not currently aligned.
+In order to help the user to align text with Strings and Glyphs, a read-only view below the text box shows any text which is not currently aligned.
 Letters which cannot be assigned to a String or glyph are underlined, marked in red, and highlighted in yellow (see `error` class in `default.css`).
 Missing letters are shown as � (see `missingGlyph` in `config.js`).
 
@@ -166,6 +180,6 @@ ComposedBlocks containing other ComposedBlocks will not be loaded correctly: a C
 
 ## Exporting an image or Alto4 layer
 
-When exporting ALTO, Jochre exports `SP` elements between words. It does not export 'HYP' elements for end-of-line hyphens - these are incorporated in the Strings.
+When exporting ALTO, Jochre exports `SP` elements between words. It does not export `HYP` elements for end-of-line hyphens - these are incorporated in the Strings.
 
 The Export Image button will only work if the image was initially loaded from a PDF file. It allows the user to save the image as a PNG.
