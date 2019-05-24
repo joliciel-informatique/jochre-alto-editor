@@ -155,16 +155,16 @@ function canvasToAlto(canvas, altoXml, pageElement) {
       let textBlock = composedBlock.textBlocks[j];
       if (textBlock.altoTop < cbTop) cbTop = textBlock.altoTop;
       if (textBlock.altoLeft < cbLeft) cbLeft = textBlock.altoLeft;
-      if (textBlock.altoLeft + textBlock.altoHeight > cbBot) cbBot = textBlock.altoLeft + textBlock.altoHeight;
-      if (textBlock.altoTop + textBlock.altoWidth > cbRight) cbRight = textBlock.altoTop + textBlock.altoWidth;
+      if (textBlock.altoTop + textBlock.altoHeight > cbBot) cbBot = textBlock.altoTop + textBlock.altoHeight;
+      if (textBlock.altoLeft + textBlock.altoWidth > cbRight) cbRight = textBlock.altoLeft + textBlock.altoWidth;
     }
 
     for (let j in composedBlock.illustrations) {
       let illustration = composedBlock.illustrations[j];
       if (illustration.altoTop < cbTop) cbTop = illustration.altoTop;
       if (illustration.altoLeft < cbLeft) cbLeft = illustration.altoLeft;
-      if (illustration.altoLeft + illustration.altoHeight > cbBot) cbBot = illustration.altoLeft + illustration.altoHeight;
-      if (illustration.altoTop + illustration.altoWidth > cbRight) cbRight = illustration.altoTop + illustration.altoWidth;
+      if (illustration.altoTop + illustration.altoHeight > cbBot) cbBot = illustration.altoTop + illustration.altoHeight;
+      if (illustration.altoLeft + illustration.altoWidth > cbRight) cbRight = illustration.altoLeft + illustration.altoWidth;
     }
 
     composedBlock.altoTop = cbTop;
