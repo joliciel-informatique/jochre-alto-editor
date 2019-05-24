@@ -17,4 +17,4 @@ Also, copy the `local-template.css` file to `local.css` and change it to match y
 
 When finished, open the `index.htm` file in your browser.
 
-More information can be found in the [design document](design/design.md).
+More information can be found in the [design document](design/design.md) and [wiki](https://gitlab.com/jochre/jochre-alto-editor/wikis/home).
