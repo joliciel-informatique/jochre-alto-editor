@@ -24,7 +24,7 @@ function config() {
   // Here is an example for Yiddish
 
   // The default language for pages
-  defaultLanguage = "ji";
+  defaultLanguage = "yi";
 
   // Accents are assumed to be contained in a single glyph with the preceding character
   accents = new Set(["ֱ", "ֲ", "ֳ", "ִ", "ֵ", "ֶ", "ַ", "ָ", "ֻ", "ּ", "ֽ", "ֿ", "ׁ", "ׂ", "ׄ", "ְ", "ֹ"]);
