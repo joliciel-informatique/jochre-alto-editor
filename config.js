@@ -70,6 +70,8 @@ let structureTags = [
   ["Marginalia", "Marginalia"],
   ["FigureCaption", "Figure caption"],
   ["TableCaption", "Table caption"],
+  ["ArticleAuthor", "Article author"],
+  ["TOC", "Internal Table of Contents"],
 ];
 
 // Sample text, which will be shown at various font sizes
