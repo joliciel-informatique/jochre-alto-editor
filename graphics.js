@@ -63,7 +63,7 @@ let page = {
 let selected = page;
 
 const composedBlockColor="orange";
-const illustrationColor="grey"
+const illustrationColor="blue"
 const textBlockColor = "black";
 const textLineColor = "blue";
 const stringColor = "green";
@@ -72,7 +72,7 @@ const glyphWidth = 1;
 const stringWidth = 2;
 const textLineWidth = 2;
 const textBlockWidth = 2;
-const illustrationWidth = 1;
+const illustrationWidth = 2;
 const composedBlockWidth=2;
 
 let fontFamilyMap = {};
@@ -350,6 +350,8 @@ function zoomObject(object, zoom) {
     object.strokeWidth = textBlockWidth / zoom;
   else if (object.name==="composedBlock")
     object.strokeWidth = composedBlockWidth / zoom;
+  else if (object.name==="illustration")
+    object.strokeWidth = illustrationWidth / zoom;
   object.setCoords();
 }
 

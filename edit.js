@@ -1805,6 +1805,10 @@ function deleteComposedBlock(composedBlock) {
       textBlock.fontType = composedBlock.fontType;
     textBlock.parent = page;
   }
+  for (let i=0; i<composedBlock.illustrations.length; i++) {
+    let illustration = composedBlock.illustrations[i];
+    illustration.parent = page;
+  }
   canvas.remove(composedBlock);
 }
 
@@ -1814,6 +1818,10 @@ function deleteTextBlock(textBlock) {
     deleteTextLine(textLine);
   }
   canvas.remove(textBlock);
+}
+
+function deleteIllustration(illustration) {
+  canvas.remove(illustration);
 }
 
 function deleteTextLine(textLine) {
@@ -1845,6 +1853,9 @@ function deleteSelected() {
     } else if (deleted.name==="textBlock") {
       deleteTextBlock(deleted);
       page.textBlocks = page.textBlocks.filter(function(item) {return item!=deleted;});
+    } else if (deleted.name==="illustration") {
+      deleteIllustration(deleted);
+      page.illustrations = page.illustrations.filter(function(item) {return item!=deleted;});
     } else if (deleted.name==="textLine") {
       let textBlock = deleted.parent;
       deleteTextLine(deleted);

@@ -308,7 +308,7 @@ function loadAlto() {
   });
   for (let j = 0; j < illustrationTags.length; j++) {
     let illustrationTag = illustrationTags[j];
-    this.loadAltoIllustration(illustrationTag);
+    let illustration = this.loadAltoIllustration(illustrationTag);
   }
 
   textBlockTags = Array.prototype.slice.call(textBlockTags);
