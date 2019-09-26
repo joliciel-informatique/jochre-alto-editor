@@ -221,6 +221,11 @@ function rotateImage(angle) {
       rotateTextBlock(textBlock, angle);
     }
 
+    for (let i=0; i<page.illustrations.length; i++) {
+      let illustration = page.illustrations[i];
+      rotateObject(illustration, angle);
+    }
+
     resizeComposedBlocks();
 
     canvas.renderAll();

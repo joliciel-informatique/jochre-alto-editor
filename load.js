@@ -308,7 +308,7 @@ function loadAlto() {
   });
   for (let j = 0; j < illustrationTags.length; j++) {
     let illustrationTag = illustrationTags[j];
-    let illustration = this.loadAltoIllustration(illustrationTag);
+    this.loadAltoIllustration(illustrationTag);
   }
 
   textBlockTags = Array.prototype.slice.call(textBlockTags);
@@ -433,7 +433,21 @@ function loadAltoIllustration(illustrationTag) {
   let width = parseInt(illustrationTag.getAttribute("WIDTH"));
   let height = parseInt(illustrationTag.getAttribute("HEIGHT"));
 
-  let illustration = newIllustration(left, top, width, height);
+  let leftTop = rotate(left, top, rotation);
+  let botRight = rotate(left + width, top + height, rotation);
+  left = leftTop.x;
+  top = leftTop.y;
+  let right = botRight.x;
+  let bottom = botRight.y;
+
+  console.log(`illustration: ${left}, ${top}, ${right}, ${bottom}`);
+
+  let illustration = newIllustration(
+    Math.round(left),
+    Math.round(top),
+    Math.round(right - left),
+    Math.round(bottom - top)
+  );
   return illustration;
 }
 
