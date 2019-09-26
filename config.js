@@ -72,6 +72,8 @@ let structureTags = [
   ["TableCaption", "Table caption"],
   ["ArticleAuthor", "Article author"],
   ["TOC", "Internal Table of Contents"],
+  ["CharacterName", "Character name in play"],
+  ["StageDirections", "Stage directions"]
 ];
 
 // Sample text, which will be shown at various font sizes
