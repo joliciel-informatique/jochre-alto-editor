@@ -123,12 +123,27 @@ function loadProperties() {
   else
     $('#layoutTag').val("");
 
+  let myStructureTags = [];
+  if (selected.name==="illustration") {
+    myStructureTags = structureTagsIllustrations;
+  } else if (selected.name==="graphicalElement") {
+    myStructureTags = structureTagsGraphicalElements;
+  } else if (selected.name==="composedBlock" || selected.name==="textBlock") {
+    myStructureTags = structureTags;
+  }
+  option = '<option value="">none</option>';
+  for (let i=0;i<myStructureTags.length;i++){
+    option += `<option value="${myStructureTags[i][0]}">${myStructureTags[i][1]}</option>`;
+  }
+  $('#structureTag').find('option').remove().end();
+  $('#structureTag').append(option);
+
   if (selected.structureTag)
     $('#structureTag').val(selected.structureTag);
   else
     $('#structureTag').val("");
 
-  if ((selected.name==="textBlock" || selected.name==="illustration") && selected.parent!==page) {
+  if ((selected.name==="textBlock" || selected.name==="illustration" || selected.name==="graphicalElement") && selected.parent!==page) {
     $('#ungroup').show();
   } else {
     $('#ungroup').hide();
@@ -261,6 +276,13 @@ function checkIfPropertyRequired(element, property, value) {
           delete illustration[property];
       }
     }
+   for (let i=0; i<element.graphicalElements.length; i++) {
+      let graphicalElement = element.graphicalElements[i];
+      if (graphicalElement.parent===element) {
+        if (graphicalElement[property]===value)
+          delete graphicalElement[property];
+      }
+    }
   } else if (element.name==="composedBlock") {
     for (let i=0; i<element.textBlocks.length; i++) {
       let textBlock = element.textBlocks[i];
@@ -271,6 +293,11 @@ function checkIfPropertyRequired(element, property, value) {
       let illustration = element.illustrations[i];
       if (illustration[property]===value)
         delete illustration[property];
+    }
+    for (let i=0; i<element.graphicalElements.length; i++) {
+      let graphicalElement = element.graphicalElements[i];
+      if (graphicalElement[property]===value)
+        delete graphicalElement[property];
     }
   } else if (element.name==="textBlock") {
     for (let i=0; i<element.textLines.length; i++) {
@@ -292,7 +319,7 @@ function resetProperties() {
 }
 
 function workOnItems(newItemType) {
-  let types = ["composedBlock", "illustration", "textBlock", "textLine", "string", "glyph"];
+  let types = ["composedBlock", "illustration", "graphicalElement", "textBlock", "textLine", "string", "glyph"];
   for (i in types) {
     let type = types[i];
     if (newItemType===type) {
@@ -369,6 +396,8 @@ let objectModifiedHandler = function (evt) {
     editComposedBlock(target, 2);
   } else if (target.name==="illustration") {
     editIllustration(target, 2);
+  } else if (target.name==="graphicalElement") {
+    editGraphicalElement(target, 2);
   } else if (target.name==="textBlock") {
     editTextBlock(target, 2);
   } else if (target.name==="textLine") {
@@ -422,6 +451,7 @@ let mouseDownHandler = function(e) {
   if ($("#chkAllowAdd").prop("checked") && selected.name==="page" &&
     (itemType==="textBlock"
       || itemType==="illustration"
+      || itemType==="graphicalElement"
       || itemType==="composedBlock"
       || itemType==="string")) {
     // show the drag rectangle although we have disabled group select
@@ -485,6 +515,8 @@ let mouseUpHandler = function(e) {
       o.stroke = composedBlockColor;
     } else if (o.name==="illustration") {
       o.stroke = illustrationColor;
+    } else if (o.name==="graphicalElement") {
+      o.stroke = graphicalElementColor;
     } else if (o.name==="textBlock") {
       o.stroke = textBlockColor;
     } else if (o.name==="textLine") {
@@ -503,6 +535,8 @@ let mouseUpHandler = function(e) {
       addComposedBlock(startDrag, endDrag, 5);
     } else if (itemType==="illustration") {
       addIllustration(startDrag, endDrag, 5);
+    } else if (itemType==="graphicalElement") {
+      addGraphicalElement(startDrag, endDrag, 5);
     } else if (itemType==="textBlock") {
       addTextBlock(startDrag, endDrag, 5);
     } else if (itemType==="textLine") {
@@ -651,8 +685,38 @@ function findComposedBlockChildren(cb, tolerance) {
     cb.illustrations.push(ol);
   }
 
+  // Find overlapped graphical elements
+  let olGraphicalElements = [];
+  for (let i=0; i<page.graphicalElements.length; i++) {
+    let ol = page.graphicalElements[i];
+    ol.right = ol.left + ol.width * zoom;
+    ol.bottom = ol.top + ol.height * zoom;
+    if (cb.right - ol.left < tolerance || ol.right - cb.left < tolerance || cb.bottom - ol.top < tolerance || ol.bottom - cb.top < tolerance) {
+     // no intersection
+    } else {
+      console.log(`Found overlap: ${ol.id}`);
+      olGraphicalElements.push(ol);
+    }
+  }
+
+  for (let i=0; i<cb.graphicalElements.length; i++) {
+    let graphicalElement = cb.graphicalElements[i];
+    graphicalElement.parent = page;
+  }
+  cb.graphicalElements = [];
+
+  for (let i=0; i<olGraphicalElements.length; i++) {
+    let ol = olGraphicalElements[i];
+    if (ol.parent!==page) {
+      ol.parent.graphicalElements = ol.parent.graphicalElements.filter(function(item) { return item!=ol; });
+    }
+    ol.parent = cb;
+    cb.graphicalElements.push(ol);
+  }
+
   sortTextBlocks(cb);
   sortIllustrations(cb);
+  sortGraphicalElements(cb);
 }
 
 /**
@@ -699,6 +763,28 @@ function addIllustration(startDrag, endDrag, tolerance) {
   }
 }
 
+/**
+* Add a new graphical element.
+*/
+function addGraphicalElement(startDrag, endDrag, tolerance) {
+  let left = startDrag.x < endDrag.x ? startDrag.x : endDrag.x;
+  let top = startDrag.y < endDrag.y ? startDrag.y : endDrag.y;
+  let width = startDrag.x < endDrag.x ? endDrag.x - startDrag.x : startDrag.x - endDrag.x;
+  let height = startDrag.y < endDrag.y ? endDrag.y - startDrag.y : startDrag.y - endDrag.y;
+
+  if (width>=tolerance && height >= tolerance) {
+    let graphicalElement = newGraphicalElement(left / zoom, top / zoom, width / zoom, height / zoom);
+
+    graphicalElement.clone(function(c) {
+     originalObject = c;
+    });
+
+    canvas.setActiveObject(graphicalElement);
+    canvas.renderAll();
+  }
+}
+
+
 function editIllustration(illustration, tolerance) {
   let orig = originalObject;
   orig.right = orig.left + orig.width * zoom;
@@ -730,6 +816,47 @@ function editIllustration(illustration, tolerance) {
   illustration.right = illustration.left + illustration.width * zoom;
   illustration.bottom = illustration.top + illustration.height * zoom;
   illustration.dirty = true;
+
+
+  if (illustration.parent!==page)
+    resizeComposedBlocks();
+  canvas.renderAll();
+}
+
+function editGraphicalElement(graphicalElement, tolerance) {
+  let orig = originalObject;
+  orig.right = orig.left + orig.width * zoom;
+  orig.bottom = orig.top + orig.height * zoom;
+
+  // if it's a rotation, rotate background image and exit
+  if (graphicalElement.angle!= 0) {
+    console.log(`Angle changed to ${graphicalElement.angle}`)
+    let angle = graphicalElement.angle;
+    if (angle > 180)
+      angle = angle - 360;
+    rotateImage(0 - angle);
+    graphicalElement.angle = 0;
+    graphicalElement.top = orig.top;
+    graphicalElement.left = orig.left;
+    canvas.renderAll();
+    return;
+  }
+
+  // first, resize the graphicalElement to the current zoom
+  graphicalElement.height = graphicalElement.height * (graphicalElement.scaleY / zoom);
+  graphicalElement.width = graphicalElement.width * (graphicalElement.scaleX / zoom);
+  graphicalElement.topNoZoom = graphicalElement.top / zoom;
+  graphicalElement.leftNoZoom = graphicalElement.left / zoom;
+  graphicalElement.scaleX = zoom;
+  graphicalElement.scaleY = zoom;
+  graphicalElement.strokeWidth = graphicalElementWidth / zoom;
+  graphicalElement.setCoords();
+  graphicalElement.right = graphicalElement.left + graphicalElement.width * zoom;
+  graphicalElement.bottom = graphicalElement.top + graphicalElement.height * zoom;
+  graphicalElement.dirty = true;
+
+  if (graphicalElement.parent!==page)
+    resizeComposedBlocks();
   canvas.renderAll();
 }
 
@@ -1824,6 +1951,10 @@ function deleteIllustration(illustration) {
   canvas.remove(illustration);
 }
 
+function deleteGraphicalElement(graphicalElement) {
+  canvas.remove(graphicalElement);
+}
+
 function deleteTextLine(textLine) {
   for (let i=0; i<textLine.strings.length; i++) {
     let string = textLine.strings[i];
@@ -1853,9 +1984,24 @@ function deleteSelected() {
     } else if (deleted.name==="textBlock") {
       deleteTextBlock(deleted);
       page.textBlocks = page.textBlocks.filter(function(item) {return item!=deleted;});
+      if (deleted.parent!==page) {
+        deleted.parent.textBlocks = deleted.parent.textBlocks.filter(function(item) {return item!=deleted;});
+        resizeComposedBlocks();
+      }
     } else if (deleted.name==="illustration") {
       deleteIllustration(deleted);
       page.illustrations = page.illustrations.filter(function(item) {return item!=deleted;});
+      if (deleted.parent!==page) {
+        deleted.parent.illustrations = deleted.parent.illustrations.filter(function(item) {return item!=deleted;});
+        resizeComposedBlocks();
+      }
+    } else if (deleted.name==="graphicalElement") {
+      deleteGraphicalElement(deleted);
+      page.graphicalElements = page.graphicalElements.filter(function(item) {return item!=deleted;});
+      if (deleted.parent!==page) {
+        deleted.parent.graphicalElements = deleted.parent.graphicalElements.filter(function(item) {return item!=deleted;});
+        resizeComposedBlocks();
+      }
     } else if (deleted.name==="textLine") {
       let textBlock = deleted.parent;
       deleteTextLine(deleted);
@@ -1901,6 +2047,12 @@ function ungroupSelected() {
     selected.parent = page;
     sortIllustrations(page);
     resizeComposedBlocks();
+  } else if (selected.name==="graphicalElement" && selected.parent!==page) {
+    let composedBlock = selected.parent;
+    composedBlock.graphicalElements = composedBlock.graphicalElements.filter(function(item) { return item!=selected; });
+    selected.parent = page;
+    sortGraphicalElements(page);
+    resizeComposedBlocks();
   }
 }
 
@@ -1936,6 +2088,11 @@ function extendElement(element, extendBorder, extendBy) {
       let illustration = page.illustrations[i];
       if (illustration.parent===page)
         extendElement(illustration, extendBorder, extendBy);
+    }
+    for (let i=0; i<page.graphicalElements.length; i++) {
+      let graphicalElement = page.graphicalElements[i];
+      if (graphicalElement.parent===page)
+        extendElement(graphicalElement, extendBorder, extendBy);
     }
   } else if (element.name==='composedBlock') {
     let composedBlock = element;
