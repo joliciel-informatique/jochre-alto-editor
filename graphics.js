@@ -56,6 +56,7 @@ let page = {
   composedBlocks: [],
   textBlocks: [],
   illustrations: [],
+  graphicalElements: [],
   language: "",
 };
 
@@ -63,7 +64,8 @@ let page = {
 let selected = page;
 
 const composedBlockColor="orange";
-const illustrationColor="blue"
+const illustrationColor="blue";
+const graphicalElementColor="red";
 const textBlockColor = "black";
 const textLineColor = "blue";
 const stringColor = "green";
@@ -73,6 +75,7 @@ const stringWidth = 2;
 const textLineWidth = 2;
 const textBlockWidth = 2;
 const illustrationWidth = 2;
+const graphicalElementWidth = 2;
 const composedBlockWidth=2;
 
 let fontFamilyMap = {};
@@ -194,9 +197,9 @@ function loadDropDowns() {
 
   structureTagMap = {}
   option = '<option value="">none</option>';
-  for (let i=0;i<structureTags.length;i++){
-    option += `<option value="${structureTags[i][0]}">${structureTags[i][1]}</option>`;
-    structureTagMap[structureTags[i][0]] = structureTags[i][1];
+  for (let i=0;i<allStructureTags.length;i++){
+    option += `<option value="${allStructureTags[i][0]}">${allStructureTags[i][1]}</option>`;
+    structureTagMap[allStructureTags[i][0]] = allStructureTags[i][1];
   }
   $('#structureTag').find('option').remove().end();
   $('#structureTag').append(option);
@@ -224,6 +227,11 @@ function rotateImage(angle) {
     for (let i=0; i<page.illustrations.length; i++) {
       let illustration = page.illustrations[i];
       rotateObject(illustration, angle);
+    }
+
+    for (let i=0; i<page.graphicalElements.length; i++) {
+      let graphicalElement = page.graphicalElements[i];
+      rotateObject(graphicalElement, angle);
     }
 
     resizeComposedBlocks();
@@ -357,6 +365,8 @@ function zoomObject(object, zoom) {
     object.strokeWidth = composedBlockWidth / zoom;
   else if (object.name==="illustration")
     object.strokeWidth = illustrationWidth / zoom;
+  else if (object.name==="graphicalElement")
+    object.strokeWidth = graphicalElementWidth / zoom;
   object.setCoords();
 }
 
@@ -433,6 +443,7 @@ function newComposedBlock(left, top, width, height) {
     fill: 'rgba(0,0,0,0)',
     height: height,
     id: `composedBlock_${cbCounter++}`,
+    graphicalElements: [],
     illustrations: [],
     left: left,
     leftNoZoom: left,
@@ -504,6 +515,47 @@ function newIllustration(left, top, width, height) {
   canvas.add(illustration);
 
   return illustration;
+}
+
+/**
+* Create a new graphical element.
+* Assumes all coordinates provided are unzoomed.
+*/
+function newGraphicalElement(left, top, width, height) {
+  let graphicalElement = new fabric.Rect({
+    bottom: top + height,
+    fill: 'rgba(0,0,0,0)',
+    height: height,
+    id: `graphicalElement_${ilCounter++}`,
+    left: left,
+    leftNoZoom: left,
+    lockMovementX: true,
+    lockMovementY: true,
+    lockRotation: false,
+    lockScalingFlip: true,
+    lockScalingX: false,
+    lockScalingY: false,
+    lockSkewingX: true,
+    lockSkewingY: true,
+    lockUniScaling: false,
+    name: 'graphicalElement',
+    parent: page,
+    right: left + width,
+    stroke: graphicalElementColor,
+    strokeWidth: graphicalElementWidth,
+    top: top,
+    topNoZoom: top,
+    width: width,
+  });
+
+  zoomObject(graphicalElement, zoom);
+
+  console.log(`added ${graphicalElement.id} at ${graphicalElement.left.toFixed(2)} , ${graphicalElement.top.toFixed(2)} with w ${graphicalElement.width.toFixed(2)}, h ${graphicalElement.height.toFixed(2)}`);
+
+  page.graphicalElements.push(graphicalElement);
+  canvas.add(graphicalElement);
+
+  return graphicalElement;
 }
 
 /**
@@ -689,6 +741,7 @@ function sortDescendents(element) {
       let composedBlock = element.composedBlocks[i];
       sortTextBlocks(composedBlock);
       sortIllustrations(composedBlock);
+      sortGraphicalElements(composedBlock);
     }
     for (let i=0; i<element.textBlocks.length; i++) {
       let textBlock = element.textBlocks[i];
@@ -697,6 +750,7 @@ function sortDescendents(element) {
   } else if (element.name==="composedBlock") {
     sortTextBlocks(element);
     sortIllustrations(element);
+    sortGraphicalElements(element);
     for (let i=0; i<element.textBlocks.length; i++) {
       let textBlock = element.textBlocks[i];
       sortDescendents(textBlock);
@@ -755,16 +809,22 @@ The element can either be the page, in which case all text blocks are sorted, or
 function sortTextBlocks(element) {
   let leftToRight = isLeftToRight(element);
   let textBlocks = element.textBlocks;
-  element.textBlocks = sortTextBlocksOrIllustrations(textBlocks, leftToRight);
+  element.textBlocks = sortBlocks(textBlocks, leftToRight);
 }
 
 function sortIllustrations(element) {
   let leftToRight = isLeftToRight(element);
   let illustrations = element.illustrations;
-  element.illustrations = sortTextBlocksOrIllustrations(illustrations, leftToRight);
+  element.illustrations = sortBlocks(illustrations, leftToRight);
 }
 
-function sortTextBlocksOrIllustrations(elements, leftToRight) {
+function sortGraphicalElements(element) {
+  let leftToRight = isLeftToRight(element);
+  let graphicalElements = element.graphicalElements;
+  element.graphicalElements = sortBlocks(graphicalElements, leftToRight);
+}
+
+function sortBlocks(elements, leftToRight) {
   if (leftToRight) {
     elements.sort(function(a, b){
       let aObj = a;
@@ -879,7 +939,7 @@ function resizeComposedBlocks() {
   for (let i=0; i<page.composedBlocks.length; i++) {
     let composedBlock = page.composedBlocks[i];
 
-    if (composedBlock.textBlocks.length===0) {
+    if (composedBlock.textBlocks.length===0 && composedBlock.illustrations.length===0 && composedBlock.graphicalElements.length===0) {
       toRemove.push(composedBlock);
       continue;
     }
@@ -914,6 +974,20 @@ function resizeComposedBlocks() {
         top = il.top;
       if (il.bottom > bottom)
         bottom = il.bottom;
+    }
+
+    for (let j=0; j<composedBlock.graphicalElements.length; j++) {
+      let ge = composedBlock.graphicalElements[j];
+      ge.right = ge.left + ge.width * zoom;
+      ge.bottom = ge.top + ge.height * zoom;
+      if (ge.left < left)
+        left = ge.left;
+      if (ge.right > right)
+        right = ge.right;
+      if (ge.top < top)
+        top = ge.top;
+      if (ge.bottom > bottom)
+        bottom = ge.bottom;
     }
 
     left -= 2;

@@ -142,6 +142,20 @@ function canvasToAlto(canvas, altoXml, pageElement) {
     illustration.altoWidth = Math.round(iBotRight.x - iTopLeft.x);
   }
 
+  for (let i in page.graphicalElements) {
+    let graphicalElement = page.graphicalElements[i];
+    let iTop = graphicalElement.top / zoom;
+    let iLeft = graphicalElement.left / zoom;
+    let iTopLeft = rotate(iLeft, iTop, 0-rotation);
+    let iBottom =iTop + graphicalElement.height;
+    let iRight = iLeft + graphicalElement.width;
+    let iBotRight = rotate(iRight, iBottom, 0-rotation);
+    graphicalElement.altoTop = Math.round(iTopLeft.y);
+    graphicalElement.altoLeft = Math.round(iTopLeft.x);
+    graphicalElement.altoHeight = Math.round(iBotRight.y - iTopLeft.y);
+    graphicalElement.altoWidth = Math.round(iBotRight.x - iTopLeft.x);
+  }
+
   // calculate coordinates for composed blocks last
   // their contained textblocks were already calculated
   for (let i in page.composedBlocks) {
@@ -165,6 +179,14 @@ function canvasToAlto(canvas, altoXml, pageElement) {
       if (illustration.altoLeft < cbLeft) cbLeft = illustration.altoLeft;
       if (illustration.altoTop + illustration.altoHeight > cbBot) cbBot = illustration.altoTop + illustration.altoHeight;
       if (illustration.altoLeft + illustration.altoWidth > cbRight) cbRight = illustration.altoLeft + illustration.altoWidth;
+    }
+
+    for (let j in composedBlock.graphicalElements) {
+      let graphicalElement = composedBlock.graphicalElements[j];
+      if (graphicalElement.altoTop < cbTop) cbTop = graphicalElement.altoTop;
+      if (graphicalElement.altoLeft < cbLeft) cbLeft = graphicalElement.altoLeft;
+      if (graphicalElement.altoTop + graphicalElement.altoHeight > cbBot) cbBot = graphicalElement.altoTop + graphicalElement.altoHeight;
+      if (graphicalElement.altoLeft + graphicalElement.altoWidth > cbRight) cbRight = graphicalElement.altoLeft + graphicalElement.altoWidth;
     }
 
     composedBlock.altoTop = cbTop;
@@ -306,9 +328,9 @@ function canvasToAlto(canvas, altoXml, pageElement) {
     }
   }
 
-  // Ad structure tags
-  for (let i=0;i<structureTags.length;i++){
-    let structureTag = structureTags[i];
+  // Add structure tags
+  for (let i=0;i<allStructureTags.length;i++){
+    let structureTag = allStructureTags[i];
     let structureTagId = `Struct-${structureTag[0]}`
     let foundTag = false;
     for (let j=0; j<tagsElement.children.length; j++) {
@@ -344,6 +366,7 @@ function canvasToAlto(canvas, altoXml, pageElement) {
   let composedBlockNumber = 1;
   let textBlockNumber = 1;
   let illustrationNumber = 1;
+  let graphicalElementNumber = 1;
   let pageNumberStr = pageNumber.padStart(5, "0");
 
   let textBlockTags = {};
@@ -359,6 +382,12 @@ function canvasToAlto(canvas, altoXml, pageElement) {
       currentComposedBlock = textBlock.parent;
       blocks.push(currentComposedBlock);
     }
+  }
+
+  for (let i=0; i<page.composedBlocks.length; i++) {
+    let composedBlock = page.composedBlocks[i];
+    if (composedBlock.textBlocks.length===0)
+      blocks.push(composedBlock);
   }
 
   for (let i=0; i<blocks.length; i++) {
@@ -395,6 +424,12 @@ function canvasToAlto(canvas, altoXml, pageElement) {
         illustrationNumber++;
       }
 
+      for (let j in composedBlock.graphicalElements) {
+        let graphicalElement = composedBlock.graphicalElements[j];
+        let graphicalElementTag = this.exportGraphicalElement(graphicalElement, composedBlockTag, pageNumber, graphicalElementNumber, nameSpaceURI);
+        graphicalElementNumber++;
+      }
+
       composedBlockNumber++;
     } else {
       let textBlock = block;
@@ -409,6 +444,14 @@ function canvasToAlto(canvas, altoXml, pageElement) {
     if (illustration.parent===page) {
       let illustrationTag = this.exportIllustration(illustration, printSpaceTag, pageNumber, illustrationNumber, nameSpaceURI);
       illustrationNumber++;
+    }
+  }
+
+  for (let j in page.graphicalElements) {
+    let graphicalElement = page.graphicalElements[j];
+    if (graphicalElement.parent===page) {
+      let graphicalElementTag = this.exportGraphicalElement(graphicalElement, printSpaceTag, pageNumber, graphicalElementNumber, nameSpaceURI);
+      graphicalElementNumber++;
     }
   }
 
@@ -615,6 +658,23 @@ function exportIllustration(illustration, parent, pageNumber, illustrationNumber
     illustrationTag.setAttribute("TAGREFS", tagRefs);
 
   parent.appendChild(illustrationTag);
+}
+
+function exportGraphicalElement(graphicalElement, parent, pageNumber, graphicalElementNumber, nameSpaceURI) {
+  let pageNumberStr = pageNumber.padStart(5, "0");
+  let ilId = `${graphicalElementNumber}`.padStart(3, "0");
+  let graphicalElementTag = altoXml.createElementNS(nameSpaceURI, "GraphicalElement");
+  graphicalElementTag.setAttribute("ID", `GE_${pageNumberStr}_${ilId}`);
+  graphicalElementTag.setAttribute("VPOS", `${graphicalElement.altoTop}`);
+  graphicalElementTag.setAttribute("HPOS", `${graphicalElement.altoLeft}`);
+  graphicalElementTag.setAttribute("HEIGHT", `${graphicalElement.altoHeight}`);
+  graphicalElementTag.setAttribute("WIDTH", `${graphicalElement.altoWidth}`);
+  graphicalElementTag.setAttribute("ROTATION", `${rotation.toFixed(2)}`);
+  let tagRefs = getTagRefs(graphicalElement);
+  if (tagRefs!=="")
+    graphicalElementTag.setAttribute("TAGREFS", tagRefs);
+
+  parent.appendChild(graphicalElementTag);
 }
 
 function exportAlto() {
