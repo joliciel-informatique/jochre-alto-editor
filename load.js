@@ -207,6 +207,7 @@ function loadAlto() {
     composedBlocks: [],
     textBlocks: [],
     illustrations: [],
+    graphicalElements: [],
     language: "",
     fontFamily: defaultFontFamily,
   };
@@ -289,9 +290,18 @@ function loadAlto() {
   let composedBlockTags = pageElement.getElementsByTagName("ComposedBlock");
   let textBlockTags = pageElement.getElementsByTagName("TextBlock");
   let illustrationTags = pageElement.getElementsByTagName("Illustration");
+  let graphicalElementTags = pageElement.getElementsByTagName("GraphicalElement");
 
-  let firstTextBlock = textBlockTags[0];
-  let altoRotation = parseFloat(firstTextBlock.getAttribute("ROTATION"));
+  let altoRotation = 0.0;
+  if (textBlockTags[0])
+    altoRotation = parseFloat(textBlockTags[0].getAttribute("ROTATION"));
+  else if (illustrationTags[0])
+    altoRotation = parseFloat(illustrationTags[0].getAttribute("ROTATION"));
+  else if (graphicalElementTags[0])
+    altoRotation = parseFloat(graphicalElementTags[0].getAttribute("ROTATION"));
+  else if (composedBlockTags[0])
+    altoRotation = parseFloat(composedBlockTags[0].getAttribute("ROTATION"));
+
   console.log(`Rotate by ${altoRotation}`);
   rotation = 0.0;
   rotateImage(altoRotation);
@@ -308,7 +318,17 @@ function loadAlto() {
   });
   for (let j = 0; j < illustrationTags.length; j++) {
     let illustrationTag = illustrationTags[j];
-    this.loadAltoIllustration(illustrationTag);
+    this.loadAltoIllustration(illustrationTag, styles);
+  }
+
+  graphicalElementTags = Array.prototype.slice.call(graphicalElementTags);
+  graphicalElementTags = graphicalElementTags.filter(function(v, j){
+    let parentTag = v.parentElement.tagName;
+    return parentTag !== "ComposedBlock"; 
+  });
+  for (let j = 0; j < graphicalElementTags.length; j++) {
+    let graphicalElementTag = graphicalElementTags[j];
+    this.loadAltoGraphicalElement(graphicalElementTag, styles);
   }
 
   textBlockTags = Array.prototype.slice.call(textBlockTags);
@@ -320,7 +340,6 @@ function loadAlto() {
     let textBlockTag = textBlockTags[j];
     this.loadAltoTextBlock(textBlockTag, styles, page);
   }
-
 
   resizeComposedBlocks();
 
@@ -358,7 +377,7 @@ function loadAlto() {
   if (maxLang)
     page.language = maxLang;
   else
-    page.language = defaultLang;
+    page.language = defaultLanguage;
 
   let maxFontFamily;
   let maxFontFamilyCount = 0;
@@ -416,25 +435,79 @@ function loadAltoComposedBlock(composedBlockTag, styles) {
     composedBlock.textBlocks.push(textBlock);
   }
 
-  let illustartionTags = composedBlockTag.getElementsByTagName("Illustration");
-  for (let j = 0; j < illustartionTags.length; j++) {
-    let illustrationTag = illustartionTags[j];
+  let illustrationTags = composedBlockTag.getElementsByTagName("Illustration");
+  for (let j = 0; j < illustrationTags.length; j++) {
+    let illustrationTag = illustrationTags[j];
 
-    let illustration = this.loadAltoIllustration(illustrationTag);
+    let illustration = this.loadAltoIllustration(illustrationTag, styles);
     illustration.parent = composedBlock;
 
     composedBlock.illustrations.push(illustration);
   }
+
+  let graphicalElementTags = composedBlockTag.getElementsByTagName("GraphicalElement");
+  for (let j = 0; j < graphicalElementTags.length; j++) {
+    let graphicalElementTag = graphicalElementTags[j];
+
+    let graphicalElement = this.loadAltoGraphicalElement(graphicalElementTag, styles);
+    graphicalElement.parent = composedBlock;
+
+    composedBlock.graphicalElements.push(graphicalElement);
+  }
 }
 
-function loadAltoIllustration(illustrationTag) {
+function loadAltoIllustration(illustrationTag, styles) {
   let left = parseInt(illustrationTag.getAttribute("HPOS"));
   let top = parseInt(illustrationTag.getAttribute("VPOS"));
   let width = parseInt(illustrationTag.getAttribute("WIDTH"));
   let height = parseInt(illustrationTag.getAttribute("HEIGHT"));
 
-  let illustration = newIllustration(left, top, width, height);
+  let leftTop = rotate(left, top, rotation);
+  let botRight = rotate(left + width, top + height, rotation);
+  left = leftTop.x;
+  top = leftTop.y;
+  let right = botRight.x;
+  let bottom = botRight.y;
+
+  console.log(`illustration: ${left}, ${top}, ${right}, ${bottom}`);
+
+  let illustration = newIllustration(
+    Math.round(left),
+    Math.round(top),
+    Math.round(right - left),
+    Math.round(bottom - top)
+  );
+
+  addTagAttributes(illustrationTag, illustration, styles);
+
   return illustration;
+}
+
+function loadAltoGraphicalElement(graphicalElementTag, styles) {
+  let left = parseInt(graphicalElementTag.getAttribute("HPOS"));
+  let top = parseInt(graphicalElementTag.getAttribute("VPOS"));
+  let width = parseInt(graphicalElementTag.getAttribute("WIDTH"));
+  let height = parseInt(graphicalElementTag.getAttribute("HEIGHT"));
+
+  let leftTop = rotate(left, top, rotation);
+  let botRight = rotate(left + width, top + height, rotation);
+  left = leftTop.x;
+  top = leftTop.y;
+  let right = botRight.x;
+  let bottom = botRight.y;
+
+  console.log(`graphicalElement: ${left}, ${top}, ${right}, ${bottom}`);
+
+  let graphicalElement = newGraphicalElement(
+    Math.round(left),
+    Math.round(top),
+    Math.round(right - left),
+    Math.round(bottom - top)
+  );
+
+  addTagAttributes(graphicalElementTag, graphicalElement, styles);
+ 
+  return graphicalElement;
 }
 
 function addTagAttributes(tag, element, styles) {
@@ -470,8 +543,8 @@ function addTagAttributes(tag, element, styles) {
           break;
         }
       }
-      for (let j=0; j<structureTags.length; j++) {
-        let structureTag = structureTags[j];
+      for (let j=0; j<allStructureTags.length; j++) {
+        let structureTag = allStructureTags[j];
         if (tagRef===`Struct-${structureTag[0]}`) {
           element.structureTag = tagRef.substring("Struct-".length);
           break;

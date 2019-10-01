@@ -71,8 +71,20 @@ let structureTags = [
   ["FigureCaption", "Figure caption"],
   ["TableCaption", "Table caption"],
   ["ArticleAuthor", "Article author"],
-  ["TOC", "Internal Table of Contents"],
+  ["TOC", "Internal Table of contents"],
+  ["CharacterName", "Character name in play"],
+  ["StageDirections", "Stage directions"]
 ];
+
+let structureTagsGraphicalElements = [
+  ["TextSeparator", "Text separator"],
+  ["FootnoteSeparator", "Footnote separator"]
+];
+
+let structureTagsIllustrations = [
+];
+
+let allStructureTags = structureTags.concat(structureTagsGraphicalElements).concat(structureTagsIllustrations);
 
 // Sample text, which will be shown at various font sizes
 let sampleText = "Lorem ipsum dolor sit amet";
