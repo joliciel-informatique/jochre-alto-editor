@@ -45,7 +45,7 @@ let initialFontSizes = [
 ];
 
 // The font size selected by default for all page elements.
-let defaultFontSize = "12pt";
+let defaultFontSize = "12.0";
 
 // The list of available layout tags
 let layoutTags = [

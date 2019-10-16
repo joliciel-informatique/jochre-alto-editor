@@ -178,13 +178,13 @@ function loadDropDowns() {
 
   option = '<option value="">none</option>';
   for (let i=0;i<fontSizes.length;i++){
-    if (fontSizes[i][1]===defaultFontSize)
+    if (fontSizes[i][0]===defaultFontSize)
       page.fontSize = fontSizes[i][0];
     option += `<option value="${fontSizes[i][0]}">${fontSizes[i][1]}</option>`;
   }
   $('#fontSize').find('option').remove().end();
   $('#fontSize').append(option);
-  $('#fontSize').val(fontSizeMap[defaultFontSize]);
+  $('#fontSize').val(defaultFontSize);
 
   layoutTagMap = {}
   option = '<option value="">none</option>';
@@ -1137,15 +1137,15 @@ function recalculateStringHeight(textBlock) {
 function displayAttribute(attribute, value) {
   let display = value;
   if (attribute==="fontSize") {
-    let display = fontSizeMap[value];
+    display = fontSizeMap[value];
     if (display==null)
       display = value;
   } else if (attribute==="layoutTag") {
-    let display = layoutTagMap[value];
+    display = layoutTagMap[value];
     if (display==null)
       display = value;
   } else if (attribute==="structureTag") {
-    let display = structureTagMap[value];
+    display = structureTagMap[value];
     if (display==null)
       display = value;
   }

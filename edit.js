@@ -2041,18 +2041,21 @@ function ungroupSelected() {
     selected.parent = page;
     sortTextBlocks(page);
     resizeComposedBlocks();
+    $('#ungroup').hide();
   } else if (selected.name==="illustration" && selected.parent!==page) {
     let composedBlock = selected.parent;
     composedBlock.illustrations = composedBlock.illustrations.filter(function(item) { return item!=selected; });
     selected.parent = page;
     sortIllustrations(page);
     resizeComposedBlocks();
+    $('#ungroup').hide();
   } else if (selected.name==="graphicalElement" && selected.parent!==page) {
     let composedBlock = selected.parent;
     composedBlock.graphicalElements = composedBlock.graphicalElements.filter(function(item) { return item!=selected; });
     selected.parent = page;
     sortGraphicalElements(page);
     resizeComposedBlocks();
+    $('#ungroup').hide();
   }
 }
 
