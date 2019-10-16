@@ -406,7 +406,7 @@ function loadAlto() {
       page.fontWidth = defaultFont.fontWidth;
     }
   }
-  page.fontSize = fontSizeMap[defaultFontSize];
+  page.fontSize = defaultFontSize;
 
   removeSuperfluousProperties();
 
