@@ -71,7 +71,10 @@ let structureTags = [
   ["FigureCaption", "Figure caption"],
   ["TableCaption", "Table caption"],
   ["ArticleAuthor", "Article author"],
+  ["ArticleDate", "Article date"],
   ["TOC", "Internal Table of contents"],
+  ["ExternalTOC", "External Table of contents"],
+  ["Index", "Index"],
   ["CharacterName", "Character name in play"],
   ["StageDirections", "Stage directions"]
 ];
