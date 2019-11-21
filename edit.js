@@ -418,6 +418,8 @@ let scaleRect;
 
 let objectScalingHandler = function(evt) {
   let o = evt.target;
+  let orig = originalObject;
+
   o.stroke='rgba(0,0,0,0.0)'
   o.dirty = true;
 
@@ -442,8 +444,26 @@ let objectScalingHandler = function(evt) {
   } else {
     scaleRect.left = o.left;
     scaleRect.top = o.top;
-    scaleRect.width = o.width * o.scaleX;
-    scaleRect.height = o.height * o.scaleY;
+    if (orig.left - o.left > 2) {
+      scaleRect.right = orig.right;
+      scaleRect.width = scaleRect.right - scaleRect.left;
+      console.log(`scaling left: l=${scaleRect.left} w=${scaleRect.width}`);
+     } else {
+      scaleRect.width = o.width * o.scaleX;
+      console.log(`scaling right: l=${scaleRect.left} w=${scaleRect.width}`);
+    }
+    if (orig.top - o.top > 2) {
+      scaleRect.bottom = orig.bottom;
+      scaleRect.height = scaleRect.bottom - scaleRect.top;
+      console.log(`scaling up: t=${scaleRect.top} h=${scaleRect.height}`);
+    } else {
+      scaleRect.height = o.height * o.scaleY;
+      console.log(`scaling down: t=${scaleRect.top} h=${scaleRect.height}`);
+    }
+    if (scaleRect.width <= 0)
+      scaleRect.width = 1;
+    if (scaleRect.height <= 0)
+      scaleRect.height = 1;
     scaleRect.dirty = true;
     canvas.renderAll();
   }
@@ -1557,9 +1577,21 @@ function editTextBlock(tb, tolerance) {
   tb.scaleX = zoom;
   tb.scaleY = zoom;
   tb.strokeWidth = textBlockWidth / zoom;
+  if (orig.left - tb.left > tolerance) {
+    tb.right = orig.right
+    tb.width = tb.right / zoom - tb.leftNoZoom;
+  } else {
+    tb.right = tb.left + tb.width * zoom;
+  }
+  if (orig.top - tb.top > tolerance) {
+    tb.bottom = orig.bottom;
+    tb.height = tb.bottom / zoom - tb.topNoZoom;
+  } else {
+    tb.bottom = tb.top + tb.height * zoom;
+  }
+  if (tb.width<=0) tb.width = 1;
+  if (tb.height<=0) tb.height = 1;
   tb.setCoords();
-  tb.right = tb.left + tb.width * zoom;
-  tb.bottom = tb.top + tb.height * zoom;
   tb.dirty = true;
 
   console.log(`textBlock id: ${tb.id}`)
