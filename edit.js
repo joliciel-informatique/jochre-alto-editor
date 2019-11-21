@@ -148,6 +148,12 @@ function loadProperties() {
   } else {
     $('#ungroup').hide();
   }
+
+  if ((selected.name==="textBlock")) {
+    $('#merge').show();
+  } else {
+    $('#merge').hide();
+  }
 }
 
 function saveProperty(property) {
@@ -914,6 +920,7 @@ function editTextLine(target, tolerance) {
   if (Math.abs(orig.scaleX - target.scaleX) < 0.01) {
     // was moved up or down
     let accept = true;
+    let merge = false;
     if (target.top <= textBlock.top || target.top >= textBlock.bottom) {
       // must be inside the textBlock
       accept = false;
@@ -921,22 +928,27 @@ function editTextLine(target, tolerance) {
       for (let i=0; i<textBlock.textLines.length; i++) {
         let textLine = textBlock.textLines[i];
         if (textLine!==target) {
-          if (((orig.top <= textLine.top && target.top >= textLine.top)
+          if (Math.abs(target.top - textLine.top) <=  maxDiff.textlineMerge
+            && target.right > textLine.left && target.left < textLine.right) {
+            // must not be too close to another textLine, if there is any horizontal overlap
+            accept = false;
+            merge = true;
+            break;
+          } else if (((orig.top <= textLine.top && target.top >= textLine.top)
             || (target.top <= textLine.top && orig.top >= textLine.top))
             && target.right > textLine.left && target.left < textLine.right) {
             // must not cross another textLine, if there is any horizontal overlap
-            accept = false;
-            break;
-          } else if (Math.abs(target.top - textLine.top) <=  maxDiff.textlineMerge
-            && target.right > textLine.left && target.left < textLine.right) {
-            // must not be too close to another textLine, if there is any horizontal overlap
             accept = false;
             break;
           }
         }
       }
     }
-    if (accept) {
+    if (merge) {
+      mergeTextLine(target);
+      recalculateStringHeight(textBlock);
+      resizeTextLine(target);
+    } else if (accept) {
       recalculateStringHeight(textBlock);
       target.bottom = target.top;
       target.right = target.left + target.width * zoom;
@@ -958,84 +970,118 @@ function editTextLine(target, tolerance) {
     target.right = target.left + target.width * zoom;
     target.dirty = true;
 
-    // check if the line overlaps any other lines
-    let overlaps = [];
-    for (let i=0; i<textBlock.textLines.length; i++) {
-      let textLine = textBlock.textLines[i];
-      if (textLine!==target && Math.abs(textLine.top - target.top) <= maxDiff.textlineMerge
-        && target.right > textLine.left && target.left < textLine.right) {
-        overlaps.push(textLine);
-      }
-    }
-    let stringSet = new Set(target.strings);
-    for(let i=0; i<overlaps.length; i++) {
-      let textLine = overlaps[i];
-      textLine.strings.forEach(function(item) {
-        item.parent = target;
-        stringSet.add(item);
-      });
-      canvas.remove(textLine);
-      textBlock.textLines = textBlock.textLines.filter(function(item) {return item!=textLine;});
-    }
-    target.strings = Array.from(stringSet);
-    sortStrings(target);
-
-    // merge strings if required
-    let prevString;
-    let groupsToMerge = [];
-    let currentGroup;
-    for (let i=0; i<target.strings.length; i++) {
-      let string = target.strings[i];
-      if (prevString && prevString.right > string.left && prevString.left < string.right) {
-        if (!currentGroup) {
-          currentGroup = [];
-          groupsToMerge.push(currentGroup);
-          currentGroup.push(prevString);
-        }
-        currentGroup.push(string);
-      } else {
-        currentGroup = null;
-      }
-      prevString = string;
-    }
-
-    for (let i=0; i<groupsToMerge.length; i++) {
-      let groupToMerge = groupsToMerge[i];
-      let string = groupToMerge[0];
-      let glyphSet = new Set(string.glyphs);
-      for (let j=1; j<groupToMerge.length; j++) {
-        let other = groupToMerge[j];
-        other.glyphs.forEach(function(item) {
-          item.parent = string;
-          glyphSet.add(item);
-        });
-        target.strings = target.strings.filter(function(item) {return item!=other;});
-        canvas.remove(other);
-      }
-      string.glyphs = Array.from(glyphSet);
-      sortGlyphs(string);
-
-      let prevGlyph;
-      let glyphsToRemove = [];
-      for (let j=0; j<string.glyphs.length; j++) {
-        let glyph = string.glyphs[j];
-        if (prevGlyph && Math.abs(prevGlyph.left - glyph.left) < maxDiff.glyphMerge) {
-          glyphsToRemove.push(prevGlyph);
-        }
-        prevGlyph = glyph;
-      }
-
-      for (let j=0; j<glyphsToRemove.length; j++) {
-        let glyph = glyphsToRemove[j];
-        string.glyphs = string.glyphs.filter(function(item) {return item!=glyph;});
-        canvas.remove(glyph);
-      }
-    }
+    mergeTextLine(target);
 
     recalculateStringHeight(textBlock);
     resizeTextLine(target);
   }
   canvas.renderAll();
+}
+
+function mergeTextLines(textBlock) {
+  let mergedLineSet = new Set();
+
+  while (true) {
+    let foundLineToMerge = false;
+    for (let i=0; i<textBlock.textLines.length; i++) {
+      let textLine = textBlock.textLines[i];
+      if (!mergedLineSet.has(textLine.id)) {
+        textLine.left = textBlock.left;
+        textLine.right = textBlock.right;
+        textLine.leftNoZoom = textBlock.leftNoZoom;
+        textLine.width = textBlock.width;
+        mergeTextLine(textLine);
+        mergedLineSet.add(textLine.id);
+        foundLineToMerge = true;
+        break;
+      }
+    }
+    if (!foundLineToMerge)
+      break;
+  }
+
+  recalculateStringHeight(textBlock);
+  resizeTextLine(target);
+}
+
+function mergeTextLine(target) {
+  let orig = originalObject;
+
+  let textBlock = target.parent;
+
+  // check if the line overlaps any other lines
+  let overlaps = [];
+  for (let i=0; i<textBlock.textLines.length; i++) {
+    let textLine = textBlock.textLines[i];
+    if (textLine!==target && Math.abs(textLine.top - target.top) <= maxDiff.textlineMerge
+      && target.right > textLine.left && target.left < textLine.right) {
+      overlaps.push(textLine);
+    }
+  }
+  let stringSet = new Set(target.strings);
+  for(let i=0; i<overlaps.length; i++) {
+    let textLine = overlaps[i];
+    textLine.strings.forEach(function(item) {
+      item.parent = target;
+      stringSet.add(item);
+    });
+    canvas.remove(textLine);
+    textBlock.textLines = textBlock.textLines.filter(function(item) {return item!=textLine;});
+  }
+  target.strings = Array.from(stringSet);
+  sortStrings(target);
+
+  // merge strings if required
+  let prevString;
+  let groupsToMerge = [];
+  let currentGroup;
+  for (let i=0; i<target.strings.length; i++) {
+    let string = target.strings[i];
+    if (prevString && prevString.right > string.left && prevString.left < string.right) {
+      if (!currentGroup) {
+        currentGroup = [];
+        groupsToMerge.push(currentGroup);
+        currentGroup.push(prevString);
+      }
+      currentGroup.push(string);
+    } else {
+      currentGroup = null;
+    }
+    prevString = string;
+  }
+
+  for (let i=0; i<groupsToMerge.length; i++) {
+    let groupToMerge = groupsToMerge[i];
+    let string = groupToMerge[0];
+    let glyphSet = new Set(string.glyphs);
+    for (let j=1; j<groupToMerge.length; j++) {
+      let other = groupToMerge[j];
+      other.glyphs.forEach(function(item) {
+        item.parent = string;
+        glyphSet.add(item);
+      });
+      target.strings = target.strings.filter(function(item) {return item!=other;});
+      canvas.remove(other);
+    }
+    string.glyphs = Array.from(glyphSet);
+    sortGlyphs(string);
+
+    let prevGlyph;
+    let glyphsToRemove = [];
+    for (let j=0; j<string.glyphs.length; j++) {
+      let glyph = string.glyphs[j];
+      if (prevGlyph && Math.abs(prevGlyph.left - glyph.left) < maxDiff.glyphMerge) {
+        glyphsToRemove.push(prevGlyph);
+      }
+      prevGlyph = glyph;
+    }
+
+    for (let j=0; j<glyphsToRemove.length; j++) {
+      let glyph = glyphsToRemove[j];
+      string.glyphs = string.glyphs.filter(function(item) {return item!=glyph;});
+      canvas.remove(glyph);
+    }
+  }
 }
 
 function addString(startDrag, endDrag, tolerance) {
@@ -2056,6 +2102,12 @@ function ungroupSelected() {
     sortGraphicalElements(page);
     resizeComposedBlocks();
     $('#ungroup').hide();
+  }
+}
+
+function mergeSelected() {
+  if (selected.name==="textBlock") {
+    mergeTextLines(selected);
   }
 }
 
