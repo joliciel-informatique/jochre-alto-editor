@@ -23,6 +23,8 @@
 let altoXml;
 let pageElement;
 let pdfUrl;
+let imageHeight;
+let imageWidth;
 
 $( document ).ready(function() {
   let text = `<?xml version="1.0" encoding="UTF-8"?>
@@ -127,6 +129,9 @@ function loadPDF() {
 
 function imageOnLoad(imgObj) {
   let image = new fabric.Image(imgObj);
+
+  imageHeight = image.height;
+  imageWidth = image.width;
 
   pageElement.setAttribute("ID", `Page`);
   pageElement.setAttribute("HEIGHT", `${image.height}`);
@@ -432,7 +437,9 @@ function loadAltoComposedBlock(composedBlockTag, styles) {
 
     let textBlock = this.loadAltoTextBlock(textBlockTag, styles, composedBlock);
 
-    composedBlock.textBlocks.push(textBlock);
+    if (textBlock) {
+      composedBlock.textBlocks.push(textBlock);
+    }
   }
 
   let illustrationTags = composedBlockTag.getElementsByTagName("Illustration");
@@ -440,9 +447,11 @@ function loadAltoComposedBlock(composedBlockTag, styles) {
     let illustrationTag = illustrationTags[j];
 
     let illustration = this.loadAltoIllustration(illustrationTag, styles);
-    illustration.parent = composedBlock;
 
-    composedBlock.illustrations.push(illustration);
+    if (illustration) {
+      illustration.parent = composedBlock;
+      composedBlock.illustrations.push(illustration);
+    }
   }
 
   let graphicalElementTags = composedBlockTag.getElementsByTagName("GraphicalElement");
@@ -450,9 +459,11 @@ function loadAltoComposedBlock(composedBlockTag, styles) {
     let graphicalElementTag = graphicalElementTags[j];
 
     let graphicalElement = this.loadAltoGraphicalElement(graphicalElementTag, styles);
-    graphicalElement.parent = composedBlock;
 
-    composedBlock.graphicalElements.push(graphicalElement);
+    if (graphicalElement) {
+      graphicalElement.parent = composedBlock;
+      composedBlock.graphicalElements.push(graphicalElement);
+    }
   }
 }
 
@@ -461,6 +472,15 @@ function loadAltoIllustration(illustrationTag, styles) {
   let top = parseInt(illustrationTag.getAttribute("VPOS"));
   let width = parseInt(illustrationTag.getAttribute("WIDTH"));
   let height = parseInt(illustrationTag.getAttribute("HEIGHT"));
+
+  if (left < 0) left = 0;
+  if (left > imageWidth) left = imageWidth;
+  if (top < 0) top = 0;
+  if (top > imageHeight) top = imageHeight;
+  if (left + width > imageWidth) width = imageWidth - left;
+  if (top + height > imageHeight) height = imageHeight - top;
+  if (width == 0) return;
+  if (height == 0) return;
 
   let leftTop = rotate(left, top, rotation);
   let botRight = rotate(left + width, top + height, rotation);
@@ -488,6 +508,15 @@ function loadAltoGraphicalElement(graphicalElementTag, styles) {
   let top = parseInt(graphicalElementTag.getAttribute("VPOS"));
   let width = parseInt(graphicalElementTag.getAttribute("WIDTH"));
   let height = parseInt(graphicalElementTag.getAttribute("HEIGHT"));
+
+  if (left < 0) left = 0;
+  if (left > imageWidth) left = imageWidth;
+  if (top < 0) top = 0;
+  if (top > imageHeight) top = imageHeight;
+  if (left + width > imageWidth) width = imageWidth - left;
+  if (top + height > imageHeight) height = imageHeight - top;
+  if (width == 0) return;
+  if (height == 0) return;
 
   let leftTop = rotate(left, top, rotation);
   let botRight = rotate(left + width, top + height, rotation);
@@ -559,6 +588,16 @@ function loadAltoTextBlock(textBlockTag, styles, parent) {
   let tbTop = parseInt(textBlockTag.getAttribute("VPOS"));
   let tbWidth = parseInt(textBlockTag.getAttribute("WIDTH"));
   let tbHeight = parseInt(textBlockTag.getAttribute("HEIGHT"));
+
+  if (tbLeft < 0) tbLeft = 0;
+  if (tbLeft > imageWidth) tbLeft = imageWidth;
+  if (tbTop < 0) tbTop = 0;
+  if (tbTop > imageHeight) tbTop = imageHeight;
+  if (tbLeft + tbWidth > imageWidth) tbWidth = imageWidth - tbLeft;
+  if (tbTop + tbHeight > imageHeight) tbHeight = imageHeight - tbTop;
+  if (tbWidth == 0) return;
+  if (tbHeight == 0) return;
+
   let leftTop = rotate(tbLeft, tbTop, rotation);
   let botRight = rotate(tbLeft + tbWidth, tbTop + tbHeight, rotation);
   tbLeft = leftTop.x;
@@ -615,6 +654,16 @@ function loadAltoTextBlock(textBlockTag, styles, parent) {
         let sTop = parseInt(stringTag.getAttribute("VPOS"));
         let sWidth = parseInt(stringTag.getAttribute("WIDTH"));
         let sHeight = parseInt(stringTag.getAttribute("HEIGHT"));
+
+        if (sLeft < 0) sLeft = 0;
+        if (sLeft > imageWidth) sLeft = imageWidth;
+        if (sTop < 0) sTop = 0;
+        if (sTop > imageHeight) sTop = imageHeight;
+        if (sLeft + sWidth > imageWidth) sWidth = imageWidth - sLeft;
+        if (sTop + sHeight > imageHeight) sHeight = imageHeight - sTop;
+        if (sWidth == 0) continue;
+        if (sHeight == 0) continue;
+
         let sRight = sLeft + sWidth;
         let sBottom = sTop + sHeight;
         let sContent = stringTag.getAttribute("CONTENT");
@@ -638,24 +687,6 @@ function loadAltoTextBlock(textBlockTag, styles, parent) {
 
         let glyphTags = stringTag.getElementsByTagName("Glyph");
 
-        for (let m = 0; m < glyphTags.length; m++) {
-          let glyphTag = glyphTags[m];
-          let gLeft = parseInt(glyphTag.getAttribute("HPOS"));
-          let gTop = parseInt(glyphTag.getAttribute("VPOS"));
-          let gWidth = parseInt(glyphTag.getAttribute("WIDTH"));
-          let gHeight = parseInt(glyphTag.getAttribute("HEIGHT"));
-          let gLeftTop = rotate(gLeft, gTop, rotation);
-          let gBotRight = rotate(gLeft + gWidth, gTop + gHeight, rotation);
-          if (gLeftTop.x < tbLeft)
-            tbLeft = gLeftTop.x;
-          if (gLeftTop.y < tbTop)
-            tbTop = gLeftTop.y;
-          if (gBotRight.x > tbRight)
-            tbRight = gBotRight.x;
-          if (gBotRight.y > tbBottom)
-            tbBottom = gBotRight.y;
-        }
-
         for (let m=1; m<glyphTags.length; m++) {
           let glyphTag1 = glyphTags[m-1];
           let glyphTag2 = glyphTags[m];
@@ -670,7 +701,9 @@ function loadAltoTextBlock(textBlockTag, styles, parent) {
             midlineX = (g2Right + g1Left) / 2;
           }
           let glyphPoint = rotate(midlineX, sTop, rotation);
-          let glyph = newGlyph(string, Math.round(glyphPoint.x));
+          if (glyphPoint.x > sLeftTop.x && glyphPoint.x < sRightBottom.x) {
+            let glyph = newGlyph(string, Math.round(glyphPoint.x));
+          }
         } // next glyph
         sortGlyphs(string);
         followsSpace = false;
