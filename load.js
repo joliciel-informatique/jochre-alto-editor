@@ -298,7 +298,9 @@ function loadAlto() {
   let graphicalElementTags = pageElement.getElementsByTagName("GraphicalElement");
 
   let altoRotation = 0.0;
-  if (textBlockTags[0])
+  if (pageElement.hasAttribute("ROTATION"))
+    altoRotation = parseFloat(pageElement.getAttribute("ROTATION"));
+  else if (textBlockTags[0])
     altoRotation = parseFloat(textBlockTags[0].getAttribute("ROTATION"));
   else if (illustrationTags[0])
     altoRotation = parseFloat(illustrationTags[0].getAttribute("ROTATION"));
@@ -313,7 +315,7 @@ function loadAlto() {
 
   for (let j = 0; j < composedBlockTags.length; j++) {
     let composedBlockTag = composedBlockTags[j];
-    this.loadAltoComposedBlock(composedBlockTag, styles);
+    this.loadAltoComposedBlock(composedBlockTag, styles, page);
   }
 
   illustrationTags = Array.prototype.slice.call(illustrationTags);
@@ -352,37 +354,41 @@ function loadAlto() {
   sortTextBlocks(page);
 
   // since certain attributes are missing at page level, we need to find the "majority" attribute.
-  let langCounts = {};
-  let fontFamilyCounts = {};
-  for (let j=0; j<page.textBlocks.length; j++) {
-    let textBlock = page.textBlocks[j];
-    let lang = getInheritedAttribute(textBlock, "language");
-    if (langCounts[lang]) {
-      langCounts[lang] += 1;
-    } else {
-      langCounts[lang] = 1;
-    }
-    let fontFamily = getInheritedAttribute(textBlock, "fontFamily");
-    if (fontFamilyCounts[fontFamily]) {
-      fontFamilyCounts[fontFamily] += 1;
-    } else {
-      fontFamilyCounts[fontFamily] = 1;
-    }
-  }
-  let maxLang;
-  let maxLangCount = 0;
-  for (let lang in langCounts) {
-    if (langCounts.hasOwnProperty(lang)) {
-      if (langCounts[lang] > maxLangCount) {
-        maxLangCount = langCounts[lang];
-        maxLang = lang;
+  if (pageElement.hasAttribute("LANG")) {
+    page.language = pageElement.getAttribute("LANG");
+  } else {
+    let langCounts = {};
+    let fontFamilyCounts = {};
+    for (let j=0; j<page.textBlocks.length; j++) {
+      let textBlock = page.textBlocks[j];
+      let lang = getInheritedAttribute(textBlock, "language");
+      if (langCounts[lang]) {
+        langCounts[lang] += 1;
+      } else {
+        langCounts[lang] = 1;
+      }
+      let fontFamily = getInheritedAttribute(textBlock, "fontFamily");
+      if (fontFamilyCounts[fontFamily]) {
+        fontFamilyCounts[fontFamily] += 1;
+      } else {
+        fontFamilyCounts[fontFamily] = 1;
       }
     }
+    let maxLang;
+    let maxLangCount = 0;
+    for (let lang in langCounts) {
+      if (langCounts.hasOwnProperty(lang)) {
+        if (langCounts[lang] > maxLangCount) {
+          maxLangCount = langCounts[lang];
+          maxLang = lang;
+        }
+      }
+    }
+    if (maxLang)
+      page.language = maxLang;
+    else
+      page.language = defaultLanguage;
   }
-  if (maxLang)
-    page.language = maxLang;
-  else
-    page.language = defaultLanguage;
 
   let maxFontFamily;
   let maxFontFamilyCount = 0;
@@ -426,10 +432,12 @@ function loadAlto() {
   workOnItems("textBlock");
 }
 
-function loadAltoComposedBlock(composedBlockTag, styles) {
+function loadAltoComposedBlock(composedBlockTag, styles, parent) {
   // we'll assume there are not any recursive composed blocks
   let composedBlock = newComposedBlock(0, 0, 100, 100);
   addTagAttributes(composedBlockTag, composedBlock, styles);
+
+  composedBlock.parent = parent;
 
   let textBlockTags = composedBlockTag.getElementsByTagName("TextBlock");
   for (let j = 0; j < textBlockTags.length; j++) {
