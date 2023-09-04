@@ -354,6 +354,9 @@ function canvasToAlto(canvas, altoXml, pageElement) {
   }
 
   // generate the alto
+  pageElement.setAttribute("ROTATION", `${rotation.toFixed(2)}`);
+  pageElement.setAttribute("LANG", getInheritedAttribute(page, "language"));
+
   let printSpaceTag = altoXml.createElementNS(nameSpaceURI, "PrintSpace");
   pageElement.appendChild(printSpaceTag);
   printSpaceTag.setAttribute("VPOS", `${Math.round(psTop)}`);
@@ -401,8 +404,10 @@ function canvasToAlto(canvas, altoXml, pageElement) {
       composedBlockTag.setAttribute("HPOS", `${composedBlock.altoLeft}`);
       composedBlockTag.setAttribute("HEIGHT", `${composedBlock.altoHeight}`);
       composedBlockTag.setAttribute("WIDTH", `${composedBlock.altoWidth}`);
-      composedBlockTag.setAttribute("ROTATION", `${rotation.toFixed(2)}`);
-      composedBlockTag.setAttribute("LANG", getInheritedAttribute(composedBlock, "language"));
+      //composedBlockTag.setAttribute("ROTATION", `${rotation.toFixed(2)}`);
+      if (composedBlock.language!=null) {
+        composedBlockTag.setAttribute("LANG", getInheritedAttribute(composedBlock, "language"));
+      }
       let fontKey = getFontKey(composedBlock);
       let styleRef = fontKeyStyleMap[fontKey];
       composedBlockTag.setAttribute("STYLEREFS", styleRef);
@@ -505,8 +510,8 @@ function exportTextBlock(textBlock, parent, pageNumber, textBlockNumber, nameSpa
   textBlockTag.setAttribute("HPOS", `${textBlock.altoLeft}`);
   textBlockTag.setAttribute("HEIGHT", `${textBlock.altoHeight}`);
   textBlockTag.setAttribute("WIDTH", `${textBlock.altoWidth}`);
-  textBlockTag.setAttribute("ROTATION", `${rotation.toFixed(2)}`);
-  if (textBlock.parent===page || textBlock.language!=null)
+  //textBlockTag.setAttribute("ROTATION", `${rotation.toFixed(2)}`);
+  if (textBlock.language!=null)
     textBlockTag.setAttribute("LANG", getInheritedAttribute(textBlock, "language"));
   if (textBlock.parent===page || textBlock.fontFamily || textBlock.fontType || textBlock.fontStyle || textBlock.fontWidth || textBlock.fontSize) {
     let fontKey = getFontKey(textBlock);
