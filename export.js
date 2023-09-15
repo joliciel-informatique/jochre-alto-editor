@@ -110,8 +110,10 @@ function canvasToAlto(canvas, altoXml, pageElement) {
         textLine.altoLeft = tlLeft;
         textLine.altoHeight = tlBot - tlTop;
         textLine.altoWidth = tlRight - tlLeft;
-        let blRotated = rotate(textLine.left / zoom, textLine.top / zoom, 0-rotation);
-        textLine.altoBaseLine = Math.round(blRotated.y);
+        let blRotated1 = rotate(textLine.left / zoom, textLine.top / zoom, 0-rotation);
+        let blRotated2 = rotate(textLine.right / zoom, textLine.top / zoom, 0-rotation);
+        textLine.altoBaseLine = [Math.round(blRotated1.x), Math.round(blRotated1.y), Math.round(blRotated2.x), Math.round(blRotated2.y)]
+
         if (tlTop < tbTop) tbTop = tlTop;
         if (tlLeft < tbLeft) tbLeft = tlLeft;
         if (tlBot > tbBot) tbBot = tlBot;
@@ -531,7 +533,8 @@ function exportTextBlock(textBlock, parent, pageNumber, textBlockNumber, nameSpa
     textLineTag.setAttribute("HPOS", `${textLine.altoLeft}`);
     textLineTag.setAttribute("HEIGHT", `${textLine.altoHeight}`);
     textLineTag.setAttribute("WIDTH", `${textLine.altoWidth}`);
-    textLineTag.setAttribute("BASELINE", `${textLine.altoBaseLine}`);
+    let baseLineText = `${textLine.altoBaseLine[0]},${textLine.altoBaseLine[1]} ${textLine.altoBaseLine[2]},${textLine.altoBaseLine[3]}`
+    textLineTag.setAttribute("BASELINE", baseLineText);
     if (textLine.language!=null)
       textLineTag.setAttribute("LANG", textLine.language);
     if (textLine.fontFamily || textLine.fontType || textLine.fontStyle || textLine.fontWidth || textLine.fontSize) {
