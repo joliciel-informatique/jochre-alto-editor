@@ -354,11 +354,11 @@ function loadAlto() {
   sortTextBlocks(page);
 
   // since certain attributes are missing at page level, we need to find the "majority" attribute.
+  let langCounts = {};
+  let fontFamilyCounts = {};
   if (pageElement.hasAttribute("LANG")) {
     page.language = pageElement.getAttribute("LANG");
   } else {
-    let langCounts = {};
-    let fontFamilyCounts = {};
     for (let j=0; j<page.textBlocks.length; j++) {
       let textBlock = page.textBlocks[j];
       let lang = getInheritedAttribute(textBlock, "language");
@@ -636,18 +636,31 @@ function loadAltoTextBlock(textBlockTag, styles, parent) {
     let textLineTag = textLineTags[k];
     let tlLeft = parseInt(textLineTag.getAttribute("HPOS"));
     let tlTop = parseInt(textLineTag.getAttribute("VPOS"));
-    let baseline = parseInt(textLineTag.getAttribute("BASELINE"));
     let tlWidth = parseInt(textLineTag.getAttribute("WIDTH"));
     let tlHeight = parseInt(textLineTag.getAttribute("HEIGHT"));
-    let tlBaseLine = rotate(tlLeft, baseline, rotation);
+
+    let tlBaseLine = tlTop
+    let baselineText = textLineTag.getAttribute("BASELINE");
+    let points = baselineText.split(/[ ,]+/);
+    if (points.length==4) {
+      // Assume x1,y1 x2,y2 format
+      console.log(`baseline points: ${points}`);
+      tlBaseLine = Math.round(rotate(points[0], points[1], rotation).y);
+    } else {
+      // Assume a single y1 coordinate, where x1 is HPOS
+      let baseline = parseInt(textLineTag.getAttribute("BASELINE"));
+      console.log(`baseline single value: ${baseline}`);
+      tlBaseLine = Math.round(rotate(tlLeft, baseline, rotation).y);
+    }
+
     let tlLeftTop = rotate(tlLeft, tlTop, rotation);
     let tlBotRight = rotate(tlLeft + tlWidth, tlTop, rotation);
 
-    let linePoints = [Math.round(tbLeft), Math.round(tlBaseLine.y), Math.round(tbRight), Math.round(tlBaseLine.y)];
-    console.log("textLineTag: %d, %d, %d, %d, %d", tlLeft, tlTop, tlLeft+tlWidth, tlTop+tlHeight, baseline);
+    let linePoints = [Math.round(tlLeftTop.x), tlBaseLine, Math.round(tlBotRight.x), tlBaseLine];
+    console.log("textLineTag: %d, %d, %d, %d, %s", tlLeft, tlTop, tlLeft+tlWidth, tlTop+tlHeight, baselineText);
     console.log("line: {%f, %f}, {%f, %f}", linePoints[0], linePoints[1], linePoints[2], linePoints[3]);
 
-    let textLine = newTextLine(textBlock, Math.round(tlBaseLine.y), 0, 10);
+    let textLine = newTextLine(textBlock, tlBaseLine, 0, 10);
     addTagAttributes(textLineTag, textLine, styles);
 
     let stringTags = textLineTag.children;
