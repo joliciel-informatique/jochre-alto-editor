@@ -25,6 +25,7 @@ let pageElement;
 let pdfUrl;
 let imageHeight;
 let imageWidth;
+let altoFileName = "alto.xml"
 
 $( document ).ready(function() {
   let text = `<?xml version="1.0" encoding="UTF-8"?>
@@ -168,6 +169,7 @@ let openAltoFile = function(event) {
     readAlto();
   };
   reader.readAsText(input.files[0]);
+  altoFileName = input.files[0].name;
 };
 
 // ===========================================================
