@@ -687,5 +687,5 @@ function exportGraphicalElement(graphicalElement, parent, pageNumber, graphicalE
 
 function exportAlto() {
   let alto = canvasToAlto(canvas, altoXml, pageElement);
-  downloadString(alto, 'xml', 'alto.xml');
+  downloadString(alto, 'xml', altoFileName);
 }
