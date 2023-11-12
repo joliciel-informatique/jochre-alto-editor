@@ -22,8 +22,10 @@
 // ===========================================================
 function buildStringSpan(string, text) {
   let chars = [];
-  for (let i=0; i<text.length; i++) {
-    let c = text.charAt(i);
+  // Casting to an array is required for some Unicode glyphs such as 𝆙 not to be broken into two parts
+  let textArray = Array.from(text)
+  for (let i=0; i<textArray.length; i++) {
+    let c = textArray[i];
     if (accents.has(c) && chars.length>0)
       chars.push(chars.pop() + c);
     else

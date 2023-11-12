@@ -588,8 +588,10 @@ function exportTextBlock(textBlock, parent, pageNumber, textBlockNumber, nameSpa
       textLineTag.appendChild(stringTag);
 
       let chars = [];
-      for (let l=0; l<string.content.length; l++) {
-        let c = string.content.charAt(l);
+      // Casting to an array is required for some Unicode glyphs such as 𝆙 not to be broken into two parts
+      let textArray = Array.from(string.content)
+      for (let l=0; l<textArray.length; l++) {
+        let c = textArray[l];
         if (accents.has(c) && chars.length>0)
           chars.push(chars.pop() + c);
         else
