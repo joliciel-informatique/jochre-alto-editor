@@ -315,6 +315,10 @@ function loadAlto() {
   rotation = 0.0;
   rotateImage(altoRotation);
 
+  if (pageElement.hasAttribute("LANG")) {
+    page.language = pageElement.getAttribute("LANG");
+  }
+
   for (let j = 0; j < composedBlockTags.length; j++) {
     let composedBlockTag = composedBlockTags[j];
     this.loadAltoComposedBlock(composedBlockTag, styles, page);
@@ -358,9 +362,7 @@ function loadAlto() {
   // since certain attributes are missing at page level, we need to find the "majority" attribute.
   let langCounts = {};
   let fontFamilyCounts = {};
-  if (pageElement.hasAttribute("LANG")) {
-    page.language = pageElement.getAttribute("LANG");
-  } else {
+  if (!pageElement.hasAttribute("LANG")) {
     for (let j=0; j<page.textBlocks.length; j++) {
       let textBlock = page.textBlocks[j];
       let lang = getInheritedAttribute(textBlock, "language");
