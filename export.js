@@ -588,17 +588,52 @@ function exportTextBlock(textBlock, parent, pageNumber, textBlockNumber, nameSpa
       textLineTag.appendChild(stringTag);
 
       let chars = [];
-      for (let l=0; l<string.content.length; l++) {
-        let c = string.content.charAt(l);
+      // Casting to an array is required for some Unicode glyphs such as 𝆙 not to be broken into two parts
+      let textArray = Array.from(string.content)
+      for (let l=0; l<textArray.length; l++) {
+        let c = textArray[l];
         if (accents.has(c) && chars.length>0)
           chars.push(chars.pop() + c);
         else
           chars.push(c);
       }
 
+      let leftToRight = isLeftToRight(string);
+
+      // Reverse number glyph ordering for right-to-left text
+      if (!leftToRight) {
+        let inNumber = false
+        let numberStart = 0
+        let fixedChars = [];
+        for (let l=0; l<chars.length; l++) {
+          let c = chars[l]
+          if (!inNumber && isDigit(c)) {
+            inNumber = true
+            numberStart = l
+          } else if (inNumber && !isDigit(c)) {
+            if (c=='.' && l+1<chars.length && isDigit(chars[l+1])) {
+              // stay in the number, it's a number such as 12.000
+            } else {
+              inNumber = false
+              for (let m=l-1; m>=numberStart; m--) {
+                fixedChars.push(chars[m])
+              }
+            }
+          }
+          if (!inNumber) {
+            fixedChars.push(chars[l])
+          }
+        }
+        if (inNumber) {
+          for (let m=chars.length-1; m>=numberStart; m--) {
+            fixedChars.push(chars[m])
+          }
+        }
+        chars = fixedChars
+      }
+
       let l = 0;
       let prevX = 0;
-      let leftToRight = isLeftToRight(string);
       if (leftToRight)
         prevX = string.altoLeft;
       else
@@ -649,6 +684,10 @@ function exportTextBlock(textBlock, parent, pageNumber, textBlockNumber, nameSpa
     }
   }
   return textBlockTag;
+}
+
+function isDigit(c) {
+  return typeof c === 'string' && c.length === 1 && c >= '0' && c <= '9';
 }
 
 function exportIllustration(illustration, parent, pageNumber, illustrationNumber, nameSpaceURI) {
