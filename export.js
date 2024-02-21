@@ -611,9 +611,13 @@ function exportTextBlock(textBlock, parent, pageNumber, textBlockNumber, nameSpa
             inNumber = true
             numberStart = l
           } else if (inNumber && !isDigit(c)) {
-            inNumber = false
-            for (let m=l-1; m>=numberStart; m--) {
-              fixedChars.push(chars[m])
+            if (c=='.' && l+1<chars.length && isDigit(chars[l+1])) {
+              // stay in the number, it's a number such as 12.000
+            } else {
+              inNumber = false
+              for (let m=l-1; m>=numberStart; m--) {
+                fixedChars.push(chars[m])
+              }
             }
           }
           if (!inNumber) {
