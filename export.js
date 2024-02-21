@@ -598,9 +598,38 @@ function exportTextBlock(textBlock, parent, pageNumber, textBlockNumber, nameSpa
           chars.push(c);
       }
 
+      let leftToRight = isLeftToRight(string);
+
+      // Reverse number glyph ordering for right-to-left text
+      if (!leftToRight) {
+        let inNumber = false
+        let numberStart = 0
+        let fixedChars = [];
+        for (let l=0; l<chars.length; l++) {
+          let c = chars[l]
+          if (!inNumber && isDigit(c)) {
+            inNumber = true
+            numberStart = l
+          } else if (inNumber && !isDigit(c)) {
+            inNumber = false
+            for (let m=l-1; m>=numberStart; m--) {
+              fixedChars.push(chars[m])
+            }
+          }
+          if (!inNumber) {
+            fixedChars.push(chars[l])
+          }
+        }
+        if (inNumber) {
+          for (let m=chars.length-1; m>=numberStart; m--) {
+            fixedChars.push(chars[m])
+          }
+        }
+        chars = fixedChars
+      }
+
       let l = 0;
       let prevX = 0;
-      let leftToRight = isLeftToRight(string);
       if (leftToRight)
         prevX = string.altoLeft;
       else
@@ -651,6 +680,10 @@ function exportTextBlock(textBlock, parent, pageNumber, textBlockNumber, nameSpa
     }
   }
   return textBlockTag;
+}
+
+function isDigit(c) {
+  return typeof c === 'string' && c.length === 1 && c >= '0' && c <= '9';
 }
 
 function exportIllustration(illustration, parent, pageNumber, illustrationNumber, nameSpaceURI) {
