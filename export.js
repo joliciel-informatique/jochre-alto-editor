@@ -35,6 +35,9 @@ function downloadString(text, fileType, fileName) {
 }
 
 function canvasToAlto(canvas, altoXml, pageElement) {
+  // sort items on page
+  sortDescendents(page)
+
   // calculate coordinates of surrounding blocks using strings
   let psTop = Number.MAX_SAFE_INTEGER;
   let psLeft = Number.MAX_SAFE_INTEGER;
