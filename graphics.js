@@ -775,31 +775,12 @@ function sortDescendents(element) {
 function sortComposedBlocks() {
   let leftToRight = isLeftToRight(page);
   let composedBlocks = page.composedBlocks;
-  if (leftToRight) {
-    composedBlocks.sort(function(a, b){
-      // if there is vertical overlap, sort horizontally
-      if (a.topNoZoom < b.topNoZoom + b.height && b.topNoZoom < a.topNoZoom + a.height && a.left != b.left)
-        return a.left - b.left;
-      if (a.top != b.top) return a.top - b.top;
-      if (a.left != b.left) return a.left - b.left;
-      return 0;
-    });
-  } else {
-    composedBlocks.sort(function(a, b){
-      // if there is vertical overlap, sort horizontally
-      if (a.topNoZoom < b.topNoZoom + b.height && b.topNoZoom < a.topNoZoom + a.height && a.leftNoZoom+a.width != b.leftNoZoom+b.width)
-        return (b.leftNoZoom + b.width) - (a.leftNoZoom + a.width);
-      if (a.top != b.top) return a.top - b.top;
-      if (a.leftNoZoom+a.width != b.leftNoZoom+b.width)
-        return (b.leftNoZoom + b.width) - (a.leftNoZoom + a.width);
-      return 0;
-    });
-  }
+  sortBlocksOnPage(composedBlocks, leftToRight)
   page.composedBlocks = composedBlocks;
 }
 
 /**
-Sort text blocks, taking into account the possiblity of them being included in composed blocks.
+Sort text blocks, taking into account the possibility of them being included in composed blocks.
 If text blocks are included in the same composed block, they are compared like standard text blocks.
 Otherwise, if a text block is in a composed block, the composed block is compared instead of the text block.
 This ensures text blocks for the same block are always grouped together when sorting.
@@ -809,7 +790,13 @@ The element can either be the page, in which case all text blocks are sorted, or
 function sortTextBlocks(element) {
   let leftToRight = isLeftToRight(element);
   let textBlocks = element.textBlocks;
-  element.textBlocks = sortBlocks(textBlocks, leftToRight);
+  if (element.name=="page") {
+    sortBlocksOnPage(textBlocks, leftToRight);
+    element.textBlocks = textBlocks;
+  } else {
+    sortBlocks(textBlocks, leftToRight);
+    element.textBlocks = textBlocks;
+  }
 }
 
 function sortIllustrations(element) {
@@ -822,6 +809,152 @@ function sortGraphicalElements(element) {
   let leftToRight = isLeftToRight(element);
   let graphicalElements = element.graphicalElements;
   element.graphicalElements = sortBlocks(graphicalElements, leftToRight);
+}
+
+/**
+Sort blocks taking into account vertical breaks.
+**/
+function sortBlocksOnPage(blocks, leftToRight) {
+  let topOrdered = blocks.map(function(x) { if (x.parent.name=="page") { return x } else { return x.parent }})
+  topOrdered = new Set(topOrdered)
+  topOrdered = Array.from(topOrdered)
+  topOrdered = topOrdered.sort(function(a, b) {
+    if (a.top != b.top) return a.top - b.top;
+    if (a.bottom != b.bottom) return a.bottom - b.bottom;
+    if (a.left != b.left) return a.left - b.left;
+    if (a.right != b.right) return a.right - b.right;
+    return 0;
+  })
+
+  blocks.sort(function(a, b) {
+    let aObj = a;
+    let bObj = b;
+    if ((a.parent!==page || b.parent!==page) && a.parent !== b.parent) {
+      if (a.parent!==page) aObj = a.parent;
+      if (b.parent!==page) bObj = b.parent;
+    }
+
+    let topBlock = aObj;
+    let bottomBlock = bObj;
+    if (aObj.top > bObj.top) {
+      topBlock = bObj;
+      bottomBlock = aObj;
+    }
+
+    let i;
+    for (i=0; i < topOrdered.length; i++) {
+      if (topOrdered[i].top > topBlock.top) {
+        break;
+      }
+    }
+
+    let j;
+    for (j=i; j < topOrdered.length; j++) {
+      if (topOrdered[j].top >= bottomBlock.top) {
+        break;
+      }
+    }
+    j = j-1;
+    if (j<i) {
+      j = i;
+    }
+
+    let verticalBreakCandidates = [];
+    if (i < topOrdered.length) {
+      verticalBreakCandidates = topOrdered.slice(i, j);
+    }
+    //console.log(`topBlock: ${stringify(topBlock)}`)
+    //console.log(`bottomBlock: ${stringify(bottomBlock)}`)
+    //console.log(`verticalBreakCandidates: ${verticalBreakCandidates.map((x) => stringify(x))}`)
+
+    let hasVerticalBreak = false;
+    for (i=0; i < verticalBreakCandidates.length; i++) {
+      let candidate = verticalBreakCandidates[i];
+      //console.log(`candidate: ${stringify(candidate)}. htop ${horizontalOverlap(topBlock, candidate).toFixed(2)}, hbot ${horizontalOverlap(bottomBlock, candidate).toFixed(2)}, vtop ${verticalOverlap(topBlock, candidate).toFixed(2)}, vbot ${verticalOverlap(bottomBlock, candidate).toFixed(2)}`)
+      if (horizontalOverlap(topBlock, candidate) > 0 && horizontalOverlap(bottomBlock, candidate) && verticalOverlap(topBlock, candidate) == 0 && verticalOverlap(bottomBlock, candidate) == 0) {
+        //console.log(`verticalbreak: ${stringify(candidate)}`)
+        hasVerticalBreak = true;
+        break;
+      }
+    }
+
+    if (hasVerticalBreak) {
+      let result = verticalCompare(aObj, bObj, leftToRight);
+      //console.log(`hasVerticalBreak. result ${result}. a ${stringify(a)}. b ${stringify(b)}`)
+      return result;
+    } else if (horizontalOverlap(aObj, bObj) > 0) {
+      let result = verticalCompare(a, b, leftToRight);
+      //console.log(`has horizontal overlap. result ${result}. a ${stringify(a)}. b ${stringify(b)}`)
+      return result;
+    } else {
+      let result = horizontalCompare(aObj, bObj, leftToRight);
+      //console.log(`no horizontal overlap. result ${result}. a ${stringify(a)}. b ${stringify(b)}`)
+      return result;
+    }
+  });
+
+  return blocks;
+}
+
+function horizontalOverlap(a, b) {
+  let maxLeft = Math.max(a.left, b.left);
+  let minRight = Math.min(a.right, b.right);
+  let horizontalOverlap = minRight - maxLeft;
+  if (horizontalOverlap < 0) {
+    return 0.0;
+  } else {
+    return horizontalOverlap;
+  }
+}
+
+function verticalOverlap(a, b) {
+  let maxTop = Math.max(a.top, b.top);
+  let minBottom = Math.min(a.bottom, b.bottom);
+  let verticalOverlap = minBottom - maxTop;
+  if (verticalOverlap < 0) {
+    return 0.0;
+  } else {
+    return verticalOverlap;
+  }
+}
+
+function horizontalCompare(a, b, leftToRight) {
+  if (leftToRight) {
+    if (a.left > b.left) return 1;
+    if (b.left > a.left) return -1;
+    if (a.right < b.right) return -1;
+    if (b.right < a.right) return 1;
+  } else {
+    if (a.right > b.right) return -1;
+    if (b.right > a.right) return 1;
+    if (a.left < b.left) return 1;
+    if (b.left < a.left) return -1;
+  }
+  if (a.top < b.top) return -1;
+  if (b.top < a.top) return 1;
+  if (a.bottom < b.bottom) return -1;
+  if (b.bottom < a.bottom) return 1;
+  return 0;
+}
+
+function verticalCompare(a, b, leftToRight) {
+  if (a.top < b.top) return -1;
+  if (b.top < a.top) return 1;
+  if (a.bottom < b.bottom) return -1;
+  if (b.bottom < a.bottom) return 1;
+  if (leftToRight) {
+    if (a.left > b.left) return 1;
+    if (b.left > a.left) return -1;
+    if (a.right < b.right) return -1;
+    if (b.right < a.right) return 1;
+    return 0;
+  } else {
+    if (a.right > b.right) return -1;
+    if (b.right > a.right) return 1;
+    if (a.left < b.left) return 1;
+    if (b.left < a.left) return -1;
+    return 0;
+  }
 }
 
 function sortBlocks(elements, leftToRight) {
@@ -1164,4 +1297,12 @@ function isLeftToRight(element) {
   let language = getInheritedAttribute(element, "language");
   let leftToRight = rtlLangs.indexOf(language) < 0;
   return leftToRight;
+}
+
+function stringify(element) {
+  let content = "";
+  if (element.name=="composedBlock") {
+    content = element.textBlocks[0].textLines[0].strings[0].content
+  }
+  return `${element.name}(${element.left.toFixed(2)}, ${element.top.toFixed(2)}, ${element.right.toFixed(2)}, ${element.bottom.toFixed(2)}, ${content})`
 }
