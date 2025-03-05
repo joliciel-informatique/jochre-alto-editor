@@ -21,14 +21,32 @@
 let defaultLanguage = "ji";
 
 // Accents are assumed to be contained in a single glyph with the preceding character
-let accents = new Set(["ֱ", "ֲ", "ֳ", "ִ", "ֵ", "ֶ", "ַ", "ָ", "ֻ", "ּ", "ֽ", "ֿ", "ׁ", "ׂ", "ׄ", "ְ", "ֹ"]);
+let accents = new Set([
+  "ֱ",
+  "ֲ",
+  "ֳ",
+  "ִ",
+  "ֵ",
+  "ֶ",
+  "ַ",
+  "ָ",
+  "ֻ",
+  "ּ",
+  "ֽ",
+  "ֿ",
+  "ׁ",
+  "ׂ",
+  "ׄ",
+  "ְ",
+  "ֹ",
+]);
 
 // This is the list that will always be available to the user
 // It will be completed with any additional font families found in the Alto file styles.
 let initialFontFamilies = [
-  ["Latin Serif", {fontType: "serif", fontWidth: "proportional"}],
-  ["Latin Sans Serif", {fontType: "sans-serif", fontWidth: "proportional"}],
-  ["Latin Typewriter", {fontType: "serif", fontWidth: "fixed"}],
+  ["Latin Serif", { fontType: "serif", fontWidth: "proportional" }],
+  ["Latin Sans Serif", { fontType: "sans-serif", fontWidth: "proportional" }],
+  ["Latin Typewriter", { fontType: "serif", fontWidth: "fixed" }],
 ];
 
 // The font family selected by default for all page elements.
@@ -76,21 +94,25 @@ let structureTags = [
   ["ExternalTOC", "External Table of contents"],
   ["Index", "Index"],
   ["CharacterName", "Character name in play"],
-  ["StageDirections", "Stage directions"]
+  ["StageDirections", "Stage directions"],
 ];
 
 let structureTagsGraphicalElements = [
   ["TextSeparator", "Text separator"],
-  ["FootnoteSeparator", "Footnote separator"]
+  ["FootnoteSeparator", "Footnote separator"],
 ];
 
-let structureTagsIllustrations = [
-];
+let structureTagsIllustrations = [];
 
-let allStructureTags = structureTags.concat(structureTagsGraphicalElements).concat(structureTagsIllustrations);
+let allStructureTags = structureTags
+  .concat(structureTagsGraphicalElements)
+  .concat(structureTagsIllustrations);
 
 // Sample text, which will be shown at various font sizes
 let sampleText = "Lorem ipsum dolor sit amet";
 
 // Symbol to use for glyphs for which we have no text
 let missingGlyph = "�";
+
+// Find/replace pairs when displaying text
+let findReplace = [];
