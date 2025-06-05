@@ -260,7 +260,7 @@ function buildFullContent() {
       let textLine = textBlock.textLines[j];
       let contents = [];
       for (let k = 0; k < textLine.strings.length; k++) {
-        contents.push(textLine.strings[k].content);
+        contents.push(fixText(textLine.strings[k].content));
       }
       let tlContent = contents.join(" ");
       tlContents.push(tlContent);
