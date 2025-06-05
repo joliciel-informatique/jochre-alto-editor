@@ -25,9 +25,9 @@ let pageElement;
 let pdfUrl;
 let imageHeight;
 let imageWidth;
-let altoFileName = "alto.xml"
+let altoFileName = "alto.xml";
 
-$( document ).ready(function() {
+$(document).ready(function () {
   let text = `<?xml version="1.0" encoding="UTF-8"?>
     <alto xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       xmlns="http://www.loc.gov/standards/alto/ns-v4#"
@@ -51,11 +51,11 @@ $( document ).ready(function() {
 });
 
 /**
-* Open an image file selected by the user
-* and load it to the canvas provided,
-* adjusting zoom factor appropriately.
-*/
-let openImageFile = function(e, canvas) {
+ * Open an image file selected by the user
+ * and load it to the canvas provided,
+ * adjusting zoom factor appropriately.
+ */
+let openImageFile = function (e, canvas) {
   let reader = new FileReader();
   reader.onload = function (event) {
     let imgObj = new Image();
@@ -66,38 +66,41 @@ let openImageFile = function(e, canvas) {
   };
 
   reader.readAsDataURL(e.target.files[0]);
-}
+};
 
-let openPDFFile = function(event) {
+let openPDFFile = function (event) {
   let reader = new FileReader();
   reader.onload = function (event) {
     pdfUrl = event.target.result;
     pdfjsLib.getDocument(pdfUrl).then(function (doc) {
       let numPages = doc.numPages;
-      $('#pdfPage').find('option').remove().end();
+      $("#pdfPage").find("option").remove().end();
 
-      let options = '';
+      let options = "";
       let count = 0;
-      for(let i = 1; i <= numPages; i++) {
+      for (let i = 1; i <= numPages; i++) {
         options += `<option value="${i}">${i}</option>`;
       }
 
-      $('#pdfPage').append(options);
+      $("#pdfPage").append(options);
     });
   };
   reader.readAsDataURL(event.target.files[0]);
-}
+};
 
 function loadPDF() {
-  let pageNumber = Number($('#pdfPage').val());
+  let pageNumber = Number($("#pdfPage").val());
   pdfjsLib.getDocument(pdfUrl).then(function (doc) {
     doc.getPage(pageNumber).then(function (page) {
       let pageImage;
       page.getOperatorList().then(function (ops) {
         let objs = [];
-        for (let i=0; i < ops.fnArray.length; i++) {
-          if (ops.fnArray[i] == pdfjsLib.OPS.paintJpegXObject || ops.fnArray[i] == pdfjsLib.OPS.paintImageXObject) {
-              objs.push(ops.argsArray[i][0])
+        for (let i = 0; i < ops.fnArray.length; i++) {
+          if (
+            ops.fnArray[i] == pdfjsLib.OPS.paintJpegXObject ||
+            ops.fnArray[i] == pdfjsLib.OPS.paintImageXObject
+          ) {
+            objs.push(ops.argsArray[i][0]);
           }
         }
         pageImage = page.objs.get(objs[0]);
@@ -105,27 +108,31 @@ function loadPDF() {
 
         let viewport = page.getViewport(1.0);
         viewport = page.getViewport(pageImage.height / viewport.height);
-        let tempCanvas = document.createElement('canvas');
-        let context = tempCanvas.getContext('2d');
+        let tempCanvas = document.createElement("canvas");
+        let context = tempCanvas.getContext("2d");
         tempCanvas.height = viewport.height;
         tempCanvas.width = viewport.width;
 
         let renderContext = {
           canvasContext: context,
-          viewport: viewport
+          viewport: viewport,
         };
-        page.render(renderContext).then(function(){
+        page.render(renderContext).then(function () {
           let imgObj = new Image();
-          let dataUrl = tempCanvas.toDataURL()
+          let dataUrl = tempCanvas.toDataURL();
           imgObj.src = dataUrl;
-          $("#exportImage").attr("href", "data:application/octet-stream;headers=Content-Disposition%3A%20attachment%3B%20filename=image.png;" + dataUrl.substring("data:image/png;".length));
+          $("#exportImage").attr(
+            "href",
+            "data:application/octet-stream;headers=Content-Disposition%3A%20attachment%3B%20filename=image.png;" +
+              dataUrl.substring("data:image/png;".length)
+          );
           imgObj.onload = function () {
             imageOnLoad(imgObj);
           };
         });
       });
     });
-  })
+  });
 }
 
 function imageOnLoad(imgObj) {
@@ -156,12 +163,12 @@ function imageOnLoad(imgObj) {
   console.log("Image set");
 }
 
-let openAltoFile = function(event) {
+let openAltoFile = function (event) {
   let input = event.target;
 
   let reader = new FileReader();
   reader.onload = function () {
-    console.log("Got text file")
+    console.log("Got text file");
     let text = reader.result;
 
     let parser = new DOMParser();
@@ -177,30 +184,30 @@ let openAltoFile = function(event) {
 // ===========================================================
 
 /**
-* Parameters:
-* - xml: the parsed xml document
-* - canvas: a fabric.js canvas
-* - pageNumber: the PHYSICAL_IMG_NR to read out of the Alto XML.
-*      If null, will read the first page.
-*/
+ * Parameters:
+ * - xml: the parsed xml document
+ * - canvas: a fabric.js canvas
+ * - pageNumber: the PHYSICAL_IMG_NR to read out of the Alto XML.
+ *      If null, will read the first page.
+ */
 function readAlto() {
   console.log(`altoXml: ${altoXml.length}`);
   let pages = altoXml.getElementsByTagName("Page");
 
-  $('#altoPage').find('option').remove().end();
+  $("#altoPage").find("option").remove().end();
 
-  let options = '';
+  let options = "";
   let count = 0;
-  console.log("Page count: %d", pages.length)
-  for(let i = 0; i < pages.length; i++) {
+  console.log("Page count: %d", pages.length);
+  for (let i = 0; i < pages.length; i++) {
     console.log("page %d: %s", i, pages[i].getAttribute("PHYSICAL_IMG_NR"));
     let physicalPageNumber = pages[i].getAttribute("PHYSICAL_IMG_NR");
     options += `<option value="${physicalPageNumber}">${physicalPageNumber}</option>`;
     count++;
   }
 
-  $('#altoPage').append(options);
-  if (count==1) {
+  $("#altoPage").append(options);
+  if (count == 1) {
     loadAlto();
   }
   zoomFonts(zoom);
@@ -221,14 +228,14 @@ function loadAlto() {
 
   fontFamilyMap = {};
   fontFamilies = [];
-  for (let i=0;i<initialFontFamilies.length;i++){
-    fontFamilyMap[initialFontFamilies[i][0]] = initialFontFamilies[i][1]
+  for (let i = 0; i < initialFontFamilies.length; i++) {
+    fontFamilyMap[initialFontFamilies[i][0]] = initialFontFamilies[i][1];
     fontFamilies.push(initialFontFamilies[i][0]);
   }
 
   fontSizeMap = {};
   fontSizes = [];
-  for (let i=0;i<initialFontSizes.length;i++){
+  for (let i = 0; i < initialFontSizes.length; i++) {
     fontSizeMap[initialFontSizes[i][0]] = initialFontSizes[i][1];
     fontSizes.push(initialFontSizes[i]);
   }
@@ -241,11 +248,11 @@ function loadAlto() {
   gCounter = 1;
   ilCounter = 1;
 
-  let pageNumber = $('#altoPage').val();
+  let pageNumber = $("#altoPage").val();
   let pages = altoXml.getElementsByTagName("Page");
-  for(let i = 0; i < pages.length; i++) {
+  for (let i = 0; i < pages.length; i++) {
     let physicalPageNumber = pages[i].getAttribute("PHYSICAL_IMG_NR");
-    if (physicalPageNumber===pageNumber) {
+    if (physicalPageNumber === pageNumber) {
       pageElement = pages[i];
       break;
     }
@@ -253,7 +260,7 @@ function loadAlto() {
 
   let textStyleTags = altoXml.getElementsByTagName("TextStyle");
   let styles = {};
-  for (let j=0; j<textStyleTags.length; j++) {
+  for (let j = 0; j < textStyleTags.length; j++) {
     let textStyleTag = textStyleTags[j];
     let id = textStyleTag.getAttribute("id");
     let style = {};
@@ -276,16 +283,16 @@ function loadAlto() {
     }
     styles[id] = style;
 
-    if (style.fontFamily!=null) {
-      if (fontFamilyMap[style.fontFamily]==null) {
+    if (style.fontFamily != null) {
+      if (fontFamilyMap[style.fontFamily] == null) {
         fontFamilyMap[style.fontFamily] = fontFamily;
         fontFamilies.push(style.fontFamily);
       }
     }
 
-    if (style.fontSize!=null) {
+    if (style.fontSize != null) {
       let fontSize = Number(style.fontSize).toFixed(1);
-      if (fontSizeMap[fontSize]==null) {
+      if (fontSizeMap[fontSize] == null) {
         fontSizeMap[fontSize] = fontSize;
         fontSizes.push([fontSize, fontSize]);
       }
@@ -297,7 +304,8 @@ function loadAlto() {
   let composedBlockTags = pageElement.getElementsByTagName("ComposedBlock");
   let textBlockTags = pageElement.getElementsByTagName("TextBlock");
   let illustrationTags = pageElement.getElementsByTagName("Illustration");
-  let graphicalElementTags = pageElement.getElementsByTagName("GraphicalElement");
+  let graphicalElementTags =
+    pageElement.getElementsByTagName("GraphicalElement");
 
   let altoRotation = 0.0;
   if (pageElement.hasAttribute("ROTATION"))
@@ -325,9 +333,9 @@ function loadAlto() {
   }
 
   illustrationTags = Array.prototype.slice.call(illustrationTags);
-  illustrationTags = illustrationTags.filter(function(v, j){
+  illustrationTags = illustrationTags.filter(function (v, j) {
     let parentTag = v.parentElement.tagName;
-    return parentTag !== "ComposedBlock"; 
+    return parentTag !== "ComposedBlock";
   });
   for (let j = 0; j < illustrationTags.length; j++) {
     let illustrationTag = illustrationTags[j];
@@ -335,9 +343,9 @@ function loadAlto() {
   }
 
   graphicalElementTags = Array.prototype.slice.call(graphicalElementTags);
-  graphicalElementTags = graphicalElementTags.filter(function(v, j){
+  graphicalElementTags = graphicalElementTags.filter(function (v, j) {
     let parentTag = v.parentElement.tagName;
-    return parentTag !== "ComposedBlock"; 
+    return parentTag !== "ComposedBlock";
   });
   for (let j = 0; j < graphicalElementTags.length; j++) {
     let graphicalElementTag = graphicalElementTags[j];
@@ -345,9 +353,9 @@ function loadAlto() {
   }
 
   textBlockTags = Array.prototype.slice.call(textBlockTags);
-  textBlockTags = textBlockTags.filter(function(v, j){
+  textBlockTags = textBlockTags.filter(function (v, j) {
     let parentTag = v.parentElement.tagName;
-    return parentTag !== "ComposedBlock"; 
+    return parentTag !== "ComposedBlock";
   });
   for (let j = 0; j < textBlockTags.length; j++) {
     let textBlockTag = textBlockTags[j];
@@ -358,12 +366,13 @@ function loadAlto() {
 
   sortComposedBlocks();
   sortTextBlocks(page);
+  mergeAdjacentStrings(page);
 
   // since certain attributes are missing at page level, we need to find the "majority" attribute.
   let langCounts = {};
   let fontFamilyCounts = {};
   if (!pageElement.hasAttribute("LANG")) {
-    for (let j=0; j<page.textBlocks.length; j++) {
+    for (let j = 0; j < page.textBlocks.length; j++) {
       let textBlock = page.textBlocks[j];
       let lang = getInheritedAttribute(textBlock, "language");
       if (langCounts[lang]) {
@@ -388,10 +397,8 @@ function loadAlto() {
         }
       }
     }
-    if (maxLang)
-      page.language = maxLang;
-    else
-      page.language = defaultLanguage;
+    if (maxLang) page.language = maxLang;
+    else page.language = defaultLanguage;
   }
 
   let maxFontFamily;
@@ -404,20 +411,18 @@ function loadAlto() {
       }
     }
   }
-  if (maxFontFamily)
-    page.fontFamily = maxFontFamily;
-  else
-    page.fontFamily = defaultFontFamily;
+  if (maxFontFamily) page.fontFamily = maxFontFamily;
+  else page.fontFamily = defaultFontFamily;
 
   let defaultFont = fontFamilyMap[page.fontFamily];
   if (defaultFont) {
-    if (defaultFont.fontType!=null) {
+    if (defaultFont.fontType != null) {
       page.fontType = defaultFont.fontType;
     }
-    if (defaultFont.fontStyle!=null) {
+    if (defaultFont.fontStyle != null) {
       page.fontStyle = defaultFont.fontStyle;
     }
-    if (defaultFont.fontWidth!=null) {
+    if (defaultFont.fontWidth != null) {
       page.fontWidth = defaultFont.fontWidth;
     }
   }
@@ -429,7 +434,7 @@ function loadAlto() {
 
   canvas.renderAll();
 
-  $('#chkAllowAdd').prop('checked', false);
+  $("#chkAllowAdd").prop("checked", false);
   loadProperties();
   setText();
 
@@ -466,11 +471,15 @@ function loadAltoComposedBlock(composedBlockTag, styles, parent) {
     }
   }
 
-  let graphicalElementTags = composedBlockTag.getElementsByTagName("GraphicalElement");
+  let graphicalElementTags =
+    composedBlockTag.getElementsByTagName("GraphicalElement");
   for (let j = 0; j < graphicalElementTags.length; j++) {
     let graphicalElementTag = graphicalElementTags[j];
 
-    let graphicalElement = this.loadAltoGraphicalElement(graphicalElementTag, styles);
+    let graphicalElement = this.loadAltoGraphicalElement(
+      graphicalElementTag,
+      styles
+    );
 
     if (graphicalElement) {
       graphicalElement.parent = composedBlock;
@@ -547,25 +556,20 @@ function loadAltoGraphicalElement(graphicalElementTag, styles) {
   );
 
   addTagAttributes(graphicalElementTag, graphicalElement, styles);
- 
+
   return graphicalElement;
 }
 
 function addTagAttributes(tag, element, styles) {
-  if (tag.hasAttribute("LANG"))
-    element.language = tag.getAttribute("LANG");
+  if (tag.hasAttribute("LANG")) element.language = tag.getAttribute("LANG");
   if (tag.hasAttribute("STYLEREFS")) {
     let styleId = tag.getAttribute("STYLEREFS");
     let style = styles[styleId];
     if (style) {
-      if (style.fontFamily)
-        element.fontFamily = style.fontFamily;
-      if (style.fontSize)
-        element.fontSize = style.fontSize;
-      if (style.fontType)
-        element.fontType = style.fontType;
-      if (style.fontWidth)
-        element.fontWidth = style.fontWidth;
+      if (style.fontFamily) element.fontFamily = style.fontFamily;
+      if (style.fontSize) element.fontSize = style.fontSize;
+      if (style.fontType) element.fontType = style.fontType;
+      if (style.fontWidth) element.fontWidth = style.fontWidth;
       if (style.fontStyle) {
         element.fontStyle = style.fontStyle;
       } else {
@@ -575,18 +579,18 @@ function addTagAttributes(tag, element, styles) {
   }
   if (tag.hasAttribute("TAGREFS")) {
     let tagRefs = tag.getAttribute("TAGREFS").split(" ");
-    for (let i=0; i < tagRefs.length; i++) {
+    for (let i = 0; i < tagRefs.length; i++) {
       let tagRef = tagRefs[i];
-      for (let j=0; j<layoutTags.length; j++) {
+      for (let j = 0; j < layoutTags.length; j++) {
         let layoutTag = layoutTags[j];
-        if (tagRef===`Layout-${layoutTag[0]}`) {
+        if (tagRef === `Layout-${layoutTag[0]}`) {
           element.layoutTag = tagRef.substring("Layout-".length);
           break;
         }
       }
-      for (let j=0; j<allStructureTags.length; j++) {
+      for (let j = 0; j < allStructureTags.length; j++) {
         let structureTag = allStructureTags[j];
-        if (tagRef===`Struct-${structureTag[0]}`) {
+        if (tagRef === `Struct-${structureTag[0]}`) {
           element.structureTag = tagRef.substring("Struct-".length);
           break;
         }
@@ -636,17 +640,17 @@ function loadAltoTextBlock(textBlockTag, styles, parent) {
 
   let hasLineWithNoStrings = false;
   let textLineTags = textBlockTag.getElementsByTagName("TextLine");
-  for (let k=0; k < textLineTags.length; k++) {
+  for (let k = 0; k < textLineTags.length; k++) {
     let textLineTag = textLineTags[k];
     let tlLeft = parseInt(textLineTag.getAttribute("HPOS"));
     let tlTop = parseInt(textLineTag.getAttribute("VPOS"));
     let tlWidth = parseInt(textLineTag.getAttribute("WIDTH"));
     let tlHeight = parseInt(textLineTag.getAttribute("HEIGHT"));
 
-    let tlBaseLine = tlTop
+    let tlBaseLine = tlTop;
     let baselineText = textLineTag.getAttribute("BASELINE");
     let points = baselineText.split(/[ ,]+/);
-    if (points.length==4) {
+    if (points.length == 4) {
       // Assume x1,y1 x2,y2 format
       console.log(`baseline points: ${points}`);
       tlBaseLine = Math.round(rotate(points[0], points[1], rotation).y);
@@ -660,21 +664,38 @@ function loadAltoTextBlock(textBlockTag, styles, parent) {
     let tlLeftTop = rotate(tlLeft, tlTop, rotation);
     let tlBotRight = rotate(tlLeft + tlWidth, tlTop, rotation);
 
-    let linePoints = [Math.round(tlLeftTop.x), tlBaseLine, Math.round(tlBotRight.x), tlBaseLine];
-    console.log("textLineTag: %d, %d, %d, %d, %s", tlLeft, tlTop, tlLeft+tlWidth, tlTop+tlHeight, baselineText);
-    console.log("line: {%f, %f}, {%f, %f}", linePoints[0], linePoints[1], linePoints[2], linePoints[3]);
+    let linePoints = [
+      Math.round(tlLeftTop.x),
+      tlBaseLine,
+      Math.round(tlBotRight.x),
+      tlBaseLine,
+    ];
+    console.log(
+      "textLineTag: %d, %d, %d, %d, %s",
+      tlLeft,
+      tlTop,
+      tlLeft + tlWidth,
+      tlTop + tlHeight,
+      baselineText
+    );
+    console.log(
+      "line: {%f, %f}, {%f, %f}",
+      linePoints[0],
+      linePoints[1],
+      linePoints[2],
+      linePoints[3]
+    );
 
     let textLine = newTextLine(textBlock, tlBaseLine, 0, 10);
     addTagAttributes(textLineTag, textLine, styles);
 
     let stringTags = textLineTag.children;
-    if (stringTags.length==0)
-      hasLineWithNoStrings = true;
+    if (stringTags.length == 0) hasLineWithNoStrings = true;
     let followsSpace = false;
     let prevString = null;
-    for (let l=0; l < stringTags.length; l++) {
+    for (let l = 0; l < stringTags.length; l++) {
       let stringTag = stringTags[l];
-      if (stringTag.tagName==="String") {
+      if (stringTag.tagName === "String") {
         let sLeft = parseInt(stringTag.getAttribute("HPOS"));
         let sTop = parseInt(stringTag.getAttribute("VPOS"));
         let sWidth = parseInt(stringTag.getAttribute("WIDTH"));
@@ -695,25 +716,27 @@ function loadAltoTextBlock(textBlockTag, styles, parent) {
         let sLeftTop = rotate(sLeft, sTop, rotation);
         let sRightBottom = rotate(sRight, sBottom, rotation);
         sWidth = sRightBottom.x - sLeftTop.x;
-        console.log(`String coords ${sLeft}, ${sTop} => ${sLeftTop.x}, ${sLeftTop.y}`);
+        console.log(
+          `String coords ${sLeft}, ${sTop} => ${sLeftTop.x}, ${sLeftTop.y}`
+        );
 
-        let string = newString(textLine, Math.round(sLeftTop.x), Math.round(sWidth));
+        let string = newString(
+          textLine,
+          Math.round(sLeftTop.x),
+          Math.round(sWidth)
+        );
         string.content = sContent;
         addTagAttributes(stringTag, string, styles);
 
-        if (sLeftTop.x < tbLeft)
-          tbLeft = sLeftTop.x;
-        if (sLeftTop.y < tbTop)
-          tbTop = sLeftTop.y;
-        if (sRightBottom.x > tbRight)
-         tbRight = sRightBottom.x;
-        if (sRightBottom.y > tbBottom)
-          tbBottom = sRightBottom.y;
+        if (sLeftTop.x < tbLeft) tbLeft = sLeftTop.x;
+        if (sLeftTop.y < tbTop) tbTop = sLeftTop.y;
+        if (sRightBottom.x > tbRight) tbRight = sRightBottom.x;
+        if (sRightBottom.y > tbBottom) tbBottom = sRightBottom.y;
 
         let glyphTags = stringTag.getElementsByTagName("Glyph");
 
-        for (let m=1; m<glyphTags.length; m++) {
-          let glyphTag1 = glyphTags[m-1];
+        for (let m = 1; m < glyphTags.length; m++) {
+          let glyphTag1 = glyphTags[m - 1];
           let glyphTag2 = glyphTags[m];
           let midlineX;
           let g1Left = parseInt(glyphTag1.getAttribute("HPOS"));
@@ -733,10 +756,10 @@ function loadAltoTextBlock(textBlockTag, styles, parent) {
         sortGlyphs(string);
         followsSpace = false;
         prevString = string;
-      } else if (stringTag.tagName==="SP") {
+      } else if (stringTag.tagName === "SP") {
         // space
         followsSpace = true;
-      } else if (stringTag.tagName==="HYP") {
+      } else if (stringTag.tagName === "HYP") {
         // TextLine can contain a single hyphen at the end of the line
         let sLeft = parseInt(stringTag.getAttribute("HPOS"));
         let sTop = parseInt(stringTag.getAttribute("VPOS"));
@@ -748,13 +771,19 @@ function loadAltoTextBlock(textBlockTag, styles, parent) {
         let sLeftTop = rotate(sLeft, sTop, rotation);
         let sRightBottom = rotate(sRight, sBottom, rotation);
         sWidth = sRightBottom.x - sLeftTop.x;
-        console.log(`Hyphen coords ${sLeft}, ${sTop} => ${sLeftTop.x}, ${sLeftTop.y}`);
+        console.log(
+          `Hyphen coords ${sLeft}, ${sTop} => ${sLeftTop.x}, ${sLeftTop.y}`
+        );
 
         // The big question is: should the hyphen be combined with the final string?
         // We answer it as follows: if separated from string by a space (SP), it's alone
         // otherwise it's combined
         if (followsSpace || prevString === null) {
-          let string = newString(textLine, Math.round(sLeftTop.x), Math.round(sWidth));
+          let string = newString(
+            textLine,
+            Math.round(sLeftTop.x),
+            Math.round(sWidth)
+          );
           string.content = sContent;
           addTagAttributes(stringTag, string, styles);
         } else {
@@ -765,10 +794,11 @@ function loadAltoTextBlock(textBlockTag, styles, parent) {
           let hyphenLeft = Math.round(sLeftTop.x);
           let hyphenRight = Math.round(sRightBottom.x);
           if (hyphenLeft < prevString.leftNoZoom) {
-            prevString.width = prevString.width + (prevString.leftNoZoom - hyphenLeft);
+            prevString.width =
+              prevString.width + (prevString.leftNoZoom - hyphenLeft);
             prevString.left = hyphenLeft * zoom;
             prevString.leftNoZoom = hyphenLeft;
-          } else if (hyphenRight > (prevString.leftNoZoom + prevString.width)) {
+          } else if (hyphenRight > prevString.leftNoZoom + prevString.width) {
             prevString.width = hyphenRight - prevString.leftNoZoom;
             prevString.right = hyphenRight * zoom;
           }
@@ -791,7 +821,13 @@ function loadAltoTextBlock(textBlockTag, styles, parent) {
 
   // we only fit the textblock rectangle to its string contents if all of its lines have strings
   // if there are empty lines, we assume the textblock hasn't yet been completed, and we keep the original rectangle.
-  if (!hasLineWithNoStrings && tbLeft < Number.MAX_SAFE_INTEGER && tbTop < Number.MAX_SAFE_INTEGER && tbRight > 0 && tbBottom > 0) {
+  if (
+    !hasLineWithNoStrings &&
+    tbLeft < Number.MAX_SAFE_INTEGER &&
+    tbTop < Number.MAX_SAFE_INTEGER &&
+    tbRight > 0 &&
+    tbBottom > 0
+  ) {
     tbLeft -= 1;
     tbTop -= 1;
     tbRight += 2;
@@ -825,33 +861,33 @@ function removeSuperfluousProperties() {
 function removeSuperfluousProperty(element, property) {
   let value = getInheritedAttribute(element, property);
   checkIfPropertyRequired(element, property, value);
-  if (element.name==="page") {
+  if (element.name === "page") {
     let page = element;
-    for (let i=0; i<page.composedBlocks.length; i++) {
+    for (let i = 0; i < page.composedBlocks.length; i++) {
       let composedBlock = page.composedBlocks[i];
       removeSuperfluousProperty(composedBlock, property);
     }
-    for (let i=0; i<page.textBlocks.length; i++) {
+    for (let i = 0; i < page.textBlocks.length; i++) {
       let textBlock = page.textBlocks[i];
-      if (textBlock.parent===page) {
+      if (textBlock.parent === page) {
         removeSuperfluousProperty(textBlock, property);
       }
     }
-  } else if (element.name==="composedBlock") {
+  } else if (element.name === "composedBlock") {
     let composedBlock = element;
-    for (let i=0; i<composedBlock.textBlocks.length; i++) {
+    for (let i = 0; i < composedBlock.textBlocks.length; i++) {
       let textBlock = composedBlock.textBlocks[i];
       removeSuperfluousProperty(textBlock, property);
     }
-  } else if (element.name==="textBlock") {
+  } else if (element.name === "textBlock") {
     let textBlock = element;
-    for (let i=0; i<textBlock.textLines.length; i++) {
+    for (let i = 0; i < textBlock.textLines.length; i++) {
       let textLine = textBlock.textLines[i];
       removeSuperfluousProperty(textLine, property);
     }
-  } else if (element.name==="textLine") {
+  } else if (element.name === "textLine") {
     let textLine = element;
-    for (let i=0; i<textLine.strings.length; i++) {
+    for (let i = 0; i < textLine.strings.length; i++) {
       let string = textLine.strings[i];
       removeSuperfluousProperty(string, property);
     }

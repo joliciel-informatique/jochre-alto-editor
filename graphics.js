@@ -17,7 +17,30 @@
 //along with Jochre.  If not, see <http://www.gnu.org/licenses/>.
 //////////////////////////////////////////////////////////////////////////////
 
-const rtlLangs = ["he", "yi", "ji", "ar", "fa", "ur", "dv", "ff", "heb", "yid", "ara", "per", "fas", "urd", "syc", "mid", "myz", "div", "man", "ful", "rhg", "en-Hebr"];
+const rtlLangs = [
+  "he",
+  "yi",
+  "ji",
+  "ar",
+  "fa",
+  "ur",
+  "dv",
+  "ff",
+  "heb",
+  "yid",
+  "ara",
+  "per",
+  "fas",
+  "urd",
+  "syc",
+  "mid",
+  "myz",
+  "div",
+  "man",
+  "ful",
+  "rhg",
+  "en-Hebr",
+];
 let rotation = 0.0;
 let zoom = 1.0;
 let itemType = "textBlock";
@@ -29,15 +52,9 @@ let gCounter = 1;
 let ilCounter = 1;
 let dpi = 600;
 
-const fontTypes = [
-  "serif",
-  "sans-serif"
-];
+const fontTypes = ["serif", "sans-serif"];
 
-const fontWidths = [
-  "proportional",
-  "fixed"
-]
+const fontWidths = ["proportional", "fixed"];
 
 const fontStyles = [
   "none", // will be removed in Alto, but necessary for overriding a style inherited from an element's parent, e.g. non-italics string in an italics textblock
@@ -46,8 +63,8 @@ const fontStyles = [
   "subscript",
   "superscript",
   "smallcaps",
-  "underline"
-]
+  "underline",
+];
 
 // The top-level object to contain the Alto elements loaded or added by the user
 let page = {
@@ -63,9 +80,9 @@ let page = {
 // The currently selected element, or the page if nothing is selected
 let selected = page;
 
-const composedBlockColor="orange";
-const illustrationColor="blue";
-const graphicalElementColor="red";
+const composedBlockColor = "orange";
+const illustrationColor = "blue";
+const graphicalElementColor = "red";
 const textBlockColor = "black";
 const textLineColor = "blue";
 const stringColor = "green";
@@ -76,7 +93,8 @@ const textLineWidth = 2;
 const textBlockWidth = 2;
 const illustrationWidth = 2;
 const graphicalElementWidth = 2;
-const composedBlockWidth=2;
+const composedBlockWidth = 2;
+const adjacentStringMergeThreshold = 10;
 
 let fontFamilyMap = {};
 let fontSizeMap = {};
@@ -85,16 +103,16 @@ let fontSizes = [];
 let layoutTagMap = {};
 let structureTagMap = {};
 
-$( document ).ready(function() {
+$(document).ready(function () {
   config();
 
-  for (let i=0;i<initialFontFamilies.length;i++){
-    fontFamilyMap[initialFontFamilies[i][0]] = initialFontFamilies[i][1]
+  for (let i = 0; i < initialFontFamilies.length; i++) {
+    fontFamilyMap[initialFontFamilies[i][0]] = initialFontFamilies[i][1];
     fontFamilies.push(initialFontFamilies[i][0]);
   }
 
-  for (let i=0;i<initialFontSizes.length;i++){
-    fontSizeMap[initialFontSizes[i][0]] = initialFontSizes[i][1]
+  for (let i = 0; i < initialFontSizes.length; i++) {
+    fontSizeMap[initialFontSizes[i][0]] = initialFontSizes[i][1];
     fontSizes.push(initialFontSizes[i]);
   }
 
@@ -102,20 +120,19 @@ $( document ).ready(function() {
   loadProperties();
   zoomFonts(1.0);
 
-  $('.alert .close').click(function(){
+  $(".alert .close").click(function () {
     $(this).parent().hide();
-    let modal = $(this).closest('.modal');
-    if (modal)
-      modal.modal('hide');
+    let modal = $(this).closest(".modal");
+    if (modal) modal.modal("hide");
   });
 
-  $('#btnExtendModal').click(function() {
-    $('#alertExtendSuccess').hide();
+  $("#btnExtendModal").click(function () {
+    $("#alertExtendSuccess").hide();
     $("#extendModal").modal();
   });
-  $('#btnExtendStrings').click(function() {
+  $("#btnExtendStrings").click(function () {
     extendStrings();
-    $('#alertExtendSuccess').show();
+    $("#alertExtendSuccess").show();
   });
 });
 
@@ -123,86 +140,85 @@ function loadDropDowns() {
   page.language = defaultLanguage;
 
   let option = '<option value="">inherited</option>';
-  for (let i=0;i<fontFamilies.length;i++){
-     option += `<option value="${fontFamilies[i]}">${fontFamilies[i]}</option>`;
+  for (let i = 0; i < fontFamilies.length; i++) {
+    option += `<option value="${fontFamilies[i]}">${fontFamilies[i]}</option>`;
   }
-  $('#fontFamily').find('option').remove().end();
-  $('#fontFamily').append(option);
-  $('#fontFamily').val(defaultFontFamily);
+  $("#fontFamily").find("option").remove().end();
+  $("#fontFamily").append(option);
+  $("#fontFamily").val(defaultFontFamily);
   page.fontFamily = defaultFontFamily;
 
   let defaultFont = fontFamilyMap[defaultFontFamily];
 
   option = '<option value="">none</option>';
-  for (let i=0;i<fontTypes.length;i++){
+  for (let i = 0; i < fontTypes.length; i++) {
     option += `<option value="${fontTypes[i]}">${fontTypes[i]}</option>`;
   }
-  $('#fontType').find('option').remove().end();
-  $('#fontType').append(option);
-  if (defaultFont.fontType!=null) {
-    $('#fontType').val(defaultFont.fontType);
+  $("#fontType").find("option").remove().end();
+  $("#fontType").append(option);
+  if (defaultFont.fontType != null) {
+    $("#fontType").val(defaultFont.fontType);
     page.fontType = defaultFont.fontType;
   } else {
-    $('#fontType').val("");
+    $("#fontType").val("");
     delete page.fontType;
   }
 
   option = '<option value="">none</option>';
-  for (let i=0;i<fontWidths.length;i++){
-     option += `<option value="${fontWidths[i]}">${fontWidths[i]}</option>`;
+  for (let i = 0; i < fontWidths.length; i++) {
+    option += `<option value="${fontWidths[i]}">${fontWidths[i]}</option>`;
   }
-  $('#fontWidth').find('option').remove().end();
-  $('#fontWidth').append(option);
-  if (defaultFont.fontWidth!=null) {
-    $('#fontWidth').val(defaultFont.fontWidth);
+  $("#fontWidth").find("option").remove().end();
+  $("#fontWidth").append(option);
+  if (defaultFont.fontWidth != null) {
+    $("#fontWidth").val(defaultFont.fontWidth);
     page.fontWidth = defaultFont.fontWidth;
   } else {
-    $('#fontWidth').val("");
+    $("#fontWidth").val("");
     delete page.fontWidth;
   }
 
   option = '<option value="">none</option>';
-  for (let i=0;i<fontStyles.length;i++){
-     option += `<option value="${fontStyles[i]}">${fontStyles[i]}</option>`;
+  for (let i = 0; i < fontStyles.length; i++) {
+    option += `<option value="${fontStyles[i]}">${fontStyles[i]}</option>`;
   }
-  $('#fontStyle').find('option').remove().end();
-  $('#fontStyle').append(option);
-  $('#fontStyle option[value=none]').hide();
-  if (defaultFont.fontStyle!=null) {
-    $('#fontStyle').val(defaultFont.fontStyle);
+  $("#fontStyle").find("option").remove().end();
+  $("#fontStyle").append(option);
+  $("#fontStyle option[value=none]").hide();
+  if (defaultFont.fontStyle != null) {
+    $("#fontStyle").val(defaultFont.fontStyle);
     page.fontStyle = defaultFont.fontStyle;
   } else {
-    $('#fontStyle').val("");
+    $("#fontStyle").val("");
     delete page.fontStyle;
   }
 
   option = '<option value="">none</option>';
-  for (let i=0;i<fontSizes.length;i++){
-    if (fontSizes[i][0]===defaultFontSize)
-      page.fontSize = fontSizes[i][0];
+  for (let i = 0; i < fontSizes.length; i++) {
+    if (fontSizes[i][0] === defaultFontSize) page.fontSize = fontSizes[i][0];
     option += `<option value="${fontSizes[i][0]}">${fontSizes[i][1]}</option>`;
   }
-  $('#fontSize').find('option').remove().end();
-  $('#fontSize').append(option);
-  $('#fontSize').val(defaultFontSize);
+  $("#fontSize").find("option").remove().end();
+  $("#fontSize").append(option);
+  $("#fontSize").val(defaultFontSize);
 
-  layoutTagMap = {}
+  layoutTagMap = {};
   option = '<option value="">none</option>';
-  for (let i=0;i<layoutTags.length;i++){
+  for (let i = 0; i < layoutTags.length; i++) {
     option += `<option value="${layoutTags[i][0]}">${layoutTags[i][1]}</option>`;
     layoutTagMap[layoutTags[i][0]] = layoutTags[i][1];
   }
-  $('#layoutTag').find('option').remove().end();
-  $('#layoutTag').append(option);
+  $("#layoutTag").find("option").remove().end();
+  $("#layoutTag").append(option);
 
-  structureTagMap = {}
+  structureTagMap = {};
   option = '<option value="">none</option>';
-  for (let i=0;i<allStructureTags.length;i++){
+  for (let i = 0; i < allStructureTags.length; i++) {
     option += `<option value="${allStructureTags[i][0]}">${allStructureTags[i][1]}</option>`;
     structureTagMap[allStructureTags[i][0]] = allStructureTags[i][1];
   }
-  $('#structureTag').find('option').remove().end();
-  $('#structureTag').append(option);
+  $("#structureTag").find("option").remove().end();
+  $("#structureTag").append(option);
 }
 
 function rotateImage(angle) {
@@ -213,23 +229,23 @@ function rotateImage(angle) {
   }
   document.getElementById("rotation").innerHTML = rotation.toFixed(2);
   let bi = canvas.backgroundImage;
-  if (bi!=null) {
+  if (bi != null) {
     bi.rotate(0 - canvas.backgroundImage.angle);
     bi.rotate(rotation);
     bi.setCoords();
 
     // Rotate all existing objects together with background image
-    for (let i=0; i<page.textBlocks.length; i++) {
+    for (let i = 0; i < page.textBlocks.length; i++) {
       let textBlock = page.textBlocks[i];
       rotateTextBlock(textBlock, angle);
     }
 
-    for (let i=0; i<page.illustrations.length; i++) {
+    for (let i = 0; i < page.illustrations.length; i++) {
       let illustration = page.illustrations[i];
       rotateObject(illustration, angle);
     }
 
-    for (let i=0; i<page.graphicalElements.length; i++) {
+    for (let i = 0; i < page.graphicalElements.length; i++) {
       let graphicalElement = page.graphicalElements[i];
       rotateObject(graphicalElement, angle);
     }
@@ -242,13 +258,13 @@ function rotateImage(angle) {
 
 function rotateTextBlock(textBlock, angle) {
   rotateObject(textBlock, angle);
-  for (let i=0; i<textBlock.textLines.length; i++) {
+  for (let i = 0; i < textBlock.textLines.length; i++) {
     let textLine = textBlock.textLines[i];
     rotateObject(textLine, angle);
-    for (let j=0; j<textLine.strings.length; j++) {
+    for (let j = 0; j < textLine.strings.length; j++) {
       let string = textLine.strings[j];
       rotateObject(string, angle);
-      for (let k=0; k<string.glyphs.length; k++) {
+      for (let k = 0; k < string.glyphs.length; k++) {
         let glyph = string.glyphs[k];
         rotateObject(glyph, angle);
       }
@@ -267,19 +283,19 @@ function rotateObject(object, angle) {
   object.topNoZoom = leftTop.y;
   object.left = leftTop.x * zoom;
   object.top = leftTop.y * zoom;
-  if (object.name==="glyph") {
+  if (object.name === "glyph") {
     object.right = object.left;
     object.width = 0;
   } else {
     object.right = rightBottom.x * zoom;
     object.width = rightBottom.x - leftTop.x;
   }
-  if (object.name==="textLine") {
-    object.bottom = object.top
+  if (object.name === "textLine") {
+    object.bottom = object.top;
     object.height = 0;
   } else {
     object.bottom = rightBottom.y * zoom;
-   object.height = rightBottom.y - leftTop.y;
+    object.height = rightBottom.y - leftTop.y;
   }
   object.dirty = true;
   object.setCoords();
@@ -289,32 +305,35 @@ function rotateObject(object, angle) {
 // Mathematical functions.
 //==================================================================================
 /**
-* Given x1, y1 and x2, where
-* theta is an angle (in counter-clockwise degrees)
-* defining a vector starting at (x1, y1),
-* returns y2: the y coordinate of the point along
-* this vector where it intercepts the vertical line passing through x2.
-*/
+ * Given x1, y1 and x2, where
+ * theta is an angle (in counter-clockwise degrees)
+ * defining a vector starting at (x1, y1),
+ * returns y2: the y coordinate of the point along
+ * this vector where it intercepts the vertical line passing through x2.
+ */
 function getIntercept(x1, y1, x2, theta) {
   // since theta is counter-clockwise, but our origin is top-left
   // we need to take the inverse of theta
   let rad = (0 - theta) * (Math.PI / 180);
   let slope = Math.tan(rad);
-  let y2 = ((x2 - x1) * slope) + y1;
+  let y2 = (x2 - x1) * slope + y1;
   return y2;
 }
 
 /**
-* Given unzoomed x and y and an angle, returns the point after rotation.
-*/
+ * Given unzoomed x and y and an angle, returns the point after rotation.
+ */
 function rotate(x1, y1, angle) {
-  if (angle==0)
-    return new fabric.Point(x1, y1);
-  let x0 = (canvas.width / zoom) / 2;
-  let y0 = (canvas.height / zoom) / 2;
+  if (angle == 0) return new fabric.Point(x1, y1);
+  let x0 = canvas.width / zoom / 2;
+  let y0 = canvas.height / zoom / 2;
   let origin = new fabric.Point(x0, y0);
   let radians = fabric.util.degreesToRadians(angle);
-  let rotated = fabric.util.rotatePoint(new fabric.Point(x1,y1), origin, radians);
+  let rotated = fabric.util.rotatePoint(
+    new fabric.Point(x1, y1),
+    origin,
+    radians
+  );
   let rounded = new fabric.Point(rotated.x, rotated.y);
   return rounded;
 }
@@ -353,19 +372,17 @@ function zoomObject(object, zoom) {
   object.top = object.topNoZoom * zoom;
   object.right = object.left + object.width * zoom;
   object.bottom = object.top + object.height * zoom;
-  if (object.name==="glyph")
-    object.strokeWidth = glyphWidth / zoom;
-  else if (object.name==="string")
-    object.strokeWidth = stringWidth / zoom;
-  else if (object.name==="textLine")
+  if (object.name === "glyph") object.strokeWidth = glyphWidth / zoom;
+  else if (object.name === "string") object.strokeWidth = stringWidth / zoom;
+  else if (object.name === "textLine")
     object.strokeWidth = textLineWidth / zoom;
-  else if (object.name==="textBlock")
+  else if (object.name === "textBlock")
     object.strokeWidth = textBlockWidth / zoom;
-  else if (object.name==="composedBlock")
+  else if (object.name === "composedBlock")
     object.strokeWidth = composedBlockWidth / zoom;
-  else if (object.name==="illustration")
+  else if (object.name === "illustration")
     object.strokeWidth = illustrationWidth / zoom;
-  else if (object.name==="graphicalElement")
+  else if (object.name === "graphicalElement")
     object.strokeWidth = graphicalElementWidth / zoom;
   object.setCoords();
 }
@@ -387,32 +404,32 @@ function setDpi() {
 function zoomFonts(zoom) {
   let leftToRight = isLeftToRight(page);
 
-  $( ".textSample" ).removeClass("rtl")
+  $(".textSample").removeClass("rtl");
   if (!leftToRight) {
-    $( ".textSample" ).addClass("rtl")
+    $(".textSample").addClass("rtl");
   }
-  $( ".pt24" ).html(sampleText);
-  $( ".pt18" ).html(sampleText);
-  $( ".pt14" ).html(sampleText);
-  $( ".pt12" ).html(sampleText);
-  $( ".pt9" ).html(sampleText);
+  $(".pt24").html(sampleText);
+  $(".pt18").html(sampleText);
+  $(".pt14").html(sampleText);
+  $(".pt12").html(sampleText);
+  $(".pt9").html(sampleText);
 
   let pixels = Math.round(24 * (dpi / 72) * zoom).toFixed(0);
-  $( ".pt24" ).css( "font-size", `${pixels}px` );
+  $(".pt24").css("font-size", `${pixels}px`);
   pixels = Math.round(18 * (dpi / 72) * zoom).toFixed(0);
-  $( ".pt18" ).css( "font-size", `${pixels}px` );
+  $(".pt18").css("font-size", `${pixels}px`);
   pixels = Math.round(14 * (dpi / 72) * zoom).toFixed(0);
-  $( ".pt14" ).css( "font-size", `${pixels}px` );
+  $(".pt14").css("font-size", `${pixels}px`);
   pixels = Math.round(12 * (dpi / 72) * zoom).toFixed(0);
-  $( ".pt12" ).css( "font-size", `${pixels}px` );
+  $(".pt12").css("font-size", `${pixels}px`);
   pixels = Math.round(9 * (dpi / 72) * zoom).toFixed(0);
-  $( ".pt9" ).css( "font-size", `${pixels}px` );
+  $(".pt9").css("font-size", `${pixels}px`);
 }
 
 /**
-* Zoom all canvas elements to a new zoom factor.
-* Strokes will continue to appear with original width.
-*/
+ * Zoom all canvas elements to a new zoom factor.
+ * Strokes will continue to appear with original width.
+ */
 function zoomAll(newZoom, canvas) {
   //let factor = newZoom / zoom;
   zoom = newZoom;
@@ -422,25 +439,25 @@ function zoomAll(newZoom, canvas) {
   zoomFonts(newZoom);
 }
 
-let adjustZoom = function(event, slider, canvas) {
+let adjustZoom = function (event, slider, canvas) {
   let sliderValue = slider.value;
   console.log(`${slider}, slider value: ${sliderValue}`);
   zoomAll(sliderValue / 100, canvas);
   $("#zoom").html(`${slider.value}%`);
-}
+};
 
 //==================================================================================
 // Functions for creating new items.
 //==================================================================================
 
 /**
-* Create a new composedBlock.
-* Assumes all coordinates provided are unzoomed.
-*/
+ * Create a new composedBlock.
+ * Assumes all coordinates provided are unzoomed.
+ */
 function newComposedBlock(left, top, width, height) {
   let composedBlock = new fabric.Rect({
     bottom: top + height,
-    fill: 'rgba(0,0,0,0)',
+    fill: "rgba(0,0,0,0)",
     height: height,
     id: `composedBlock_${cbCounter++}`,
     graphicalElements: [],
@@ -456,7 +473,7 @@ function newComposedBlock(left, top, width, height) {
     lockSkewingX: true,
     lockSkewingY: true,
     lockUniScaling: false,
-    name: 'composedBlock',
+    name: "composedBlock",
     parent: page,
     right: left + width,
     stroke: composedBlockColor,
@@ -468,7 +485,13 @@ function newComposedBlock(left, top, width, height) {
   });
 
   zoomObject(composedBlock, zoom);
-  console.log(`added ${composedBlock.id} at ${composedBlock.left.toFixed(2)} , ${composedBlock.top.toFixed(2)} with w ${composedBlock.width.toFixed(2)}, h ${composedBlock.height.toFixed(2)}`);
+  console.log(
+    `added ${composedBlock.id} at ${composedBlock.left.toFixed(
+      2
+    )} , ${composedBlock.top.toFixed(2)} with w ${composedBlock.width.toFixed(
+      2
+    )}, h ${composedBlock.height.toFixed(2)}`
+  );
 
   page.composedBlocks.push(composedBlock);
   canvas.add(composedBlock);
@@ -477,13 +500,13 @@ function newComposedBlock(left, top, width, height) {
 }
 
 /**
-* Create a new illustration.
-* Assumes all coordinates provided are unzoomed.
-*/
+ * Create a new illustration.
+ * Assumes all coordinates provided are unzoomed.
+ */
 function newIllustration(left, top, width, height) {
   let illustration = new fabric.Rect({
     bottom: top + height,
-    fill: 'rgba(0,0,0,0)',
+    fill: "rgba(0,0,0,0)",
     height: height,
     id: `illustration_${ilCounter++}`,
     left: left,
@@ -497,7 +520,7 @@ function newIllustration(left, top, width, height) {
     lockSkewingX: true,
     lockSkewingY: true,
     lockUniScaling: false,
-    name: 'illustration',
+    name: "illustration",
     parent: page,
     right: left + width,
     stroke: illustrationColor,
@@ -509,7 +532,13 @@ function newIllustration(left, top, width, height) {
 
   zoomObject(illustration, zoom);
 
-  console.log(`added ${illustration.id} at ${illustration.left.toFixed(2)} , ${illustration.top.toFixed(2)} with w ${illustration.width.toFixed(2)}, h ${illustration.height.toFixed(2)}`);
+  console.log(
+    `added ${illustration.id} at ${illustration.left.toFixed(
+      2
+    )} , ${illustration.top.toFixed(2)} with w ${illustration.width.toFixed(
+      2
+    )}, h ${illustration.height.toFixed(2)}`
+  );
 
   page.illustrations.push(illustration);
   canvas.add(illustration);
@@ -518,13 +547,13 @@ function newIllustration(left, top, width, height) {
 }
 
 /**
-* Create a new graphical element.
-* Assumes all coordinates provided are unzoomed.
-*/
+ * Create a new graphical element.
+ * Assumes all coordinates provided are unzoomed.
+ */
 function newGraphicalElement(left, top, width, height) {
   let graphicalElement = new fabric.Rect({
     bottom: top + height,
-    fill: 'rgba(0,0,0,0)',
+    fill: "rgba(0,0,0,0)",
     height: height,
     id: `graphicalElement_${ilCounter++}`,
     left: left,
@@ -538,7 +567,7 @@ function newGraphicalElement(left, top, width, height) {
     lockSkewingX: true,
     lockSkewingY: true,
     lockUniScaling: false,
-    name: 'graphicalElement',
+    name: "graphicalElement",
     parent: page,
     right: left + width,
     stroke: graphicalElementColor,
@@ -550,7 +579,15 @@ function newGraphicalElement(left, top, width, height) {
 
   zoomObject(graphicalElement, zoom);
 
-  console.log(`added ${graphicalElement.id} at ${graphicalElement.left.toFixed(2)} , ${graphicalElement.top.toFixed(2)} with w ${graphicalElement.width.toFixed(2)}, h ${graphicalElement.height.toFixed(2)}`);
+  console.log(
+    `added ${graphicalElement.id} at ${graphicalElement.left.toFixed(
+      2
+    )} , ${graphicalElement.top.toFixed(
+      2
+    )} with w ${graphicalElement.width.toFixed(
+      2
+    )}, h ${graphicalElement.height.toFixed(2)}`
+  );
 
   page.graphicalElements.push(graphicalElement);
   canvas.add(graphicalElement);
@@ -559,13 +596,13 @@ function newGraphicalElement(left, top, width, height) {
 }
 
 /**
-* Create a new textBlock.
-* Assumes all coordinates provided are unzoomed.
-*/
+ * Create a new textBlock.
+ * Assumes all coordinates provided are unzoomed.
+ */
 function newTextBlock(left, top, width, height) {
   let textBlock = new fabric.Rect({
     bottom: top + height,
-    fill: 'rgba(0,0,0,0)',
+    fill: "rgba(0,0,0,0)",
     height: height,
     id: `textBlock_${tbCounter++}`,
     left: left,
@@ -579,7 +616,7 @@ function newTextBlock(left, top, width, height) {
     lockSkewingX: true,
     lockSkewingY: true,
     lockUniScaling: false,
-    name: 'textBlock',
+    name: "textBlock",
     parent: page,
     right: left + width,
     stroke: textBlockColor,
@@ -600,7 +637,13 @@ function newTextBlock(left, top, width, height) {
 
   zoomObject(textBlock, zoom);
 
-  console.log(`added ${textBlock.id} at ${textBlock.left.toFixed(2)} , ${textBlock.top.toFixed(2)} with w ${textBlock.width.toFixed(2)}, h ${textBlock.height.toFixed(2)}`);
+  console.log(
+    `added ${textBlock.id} at ${textBlock.left.toFixed(
+      2
+    )} , ${textBlock.top.toFixed(2)} with w ${textBlock.width.toFixed(
+      2
+    )}, h ${textBlock.height.toFixed(2)}`
+  );
 
   page.textBlocks.push(textBlock);
   canvas.add(textBlock);
@@ -609,38 +652,45 @@ function newTextBlock(left, top, width, height) {
 }
 
 /**
-* Create a new textLine.
-* Assumes y is unzoomed.
-*/
+ * Create a new textLine.
+ * Assumes y is unzoomed.
+ */
 function newTextLine(textBlock, y, stringTop, stringHeight) {
-  let textLine = new fabric.Line([textBlock.left / zoom, y, textBlock.left / zoom + textBlock.width, y], {
-    bottom: y,
-    id: `textLine_${tlCounter++}`,
-    left: textBlock.leftNoZoom,
-    leftNoZoom: textBlock.leftNoZoom,
-    lockMovementX: true,
-    lockMovementY: false,
-    lockRotation: true,
-    lockScalingFlip: true,
-    lockScalingX: false,
-    lockScalingY: true,
-    lockSkewingX: true,
-    lockSkewingY: true,
-    lockUniScaling: false,
-    name: 'textLine',
-    parent: textBlock,
-    right: textBlock.leftNoZoom + textBlock.width,
-    stringHeight: stringHeight,
-    stringTop: stringTop,
-    strings: [],
-    stroke: textLineColor,
-    strokeWidth: textLineWidth,
-    top: y,
-    topNoZoom: y
-  });
+  let textLine = new fabric.Line(
+    [textBlock.left / zoom, y, textBlock.left / zoom + textBlock.width, y],
+    {
+      bottom: y,
+      id: `textLine_${tlCounter++}`,
+      left: textBlock.leftNoZoom,
+      leftNoZoom: textBlock.leftNoZoom,
+      lockMovementX: true,
+      lockMovementY: false,
+      lockRotation: true,
+      lockScalingFlip: true,
+      lockScalingX: false,
+      lockScalingY: true,
+      lockSkewingX: true,
+      lockSkewingY: true,
+      lockUniScaling: false,
+      name: "textLine",
+      parent: textBlock,
+      right: textBlock.leftNoZoom + textBlock.width,
+      stringHeight: stringHeight,
+      stringTop: stringTop,
+      strings: [],
+      stroke: textLineColor,
+      strokeWidth: textLineWidth,
+      top: y,
+      topNoZoom: y,
+    }
+  );
 
   zoomObject(textLine, zoom);
-  console.log(`added ${textLine.id} to ${textBlock.id} at ${textLine.left.toFixed(2)} , ${textLine.top.toFixed(2)} with w ${textLine.width.toFixed(2)}`);
+  console.log(
+    `added ${textLine.id} to ${textBlock.id} at ${textLine.left.toFixed(
+      2
+    )} , ${textLine.top.toFixed(2)} with w ${textLine.width.toFixed(2)}`
+  );
 
   textBlock.textLines.push(textLine);
 
@@ -649,14 +699,14 @@ function newTextLine(textBlock, y, stringTop, stringHeight) {
 }
 
 /**
-* Create a new string.
-* Assumes left and width are unzoomed.
-*/
+ * Create a new string.
+ * Assumes left and width are unzoomed.
+ */
 function newString(textLine, left, width) {
   let string = new fabric.Rect({
     bottom: textLine.stringTop + textLine.stringHeight,
-    content: '',
-    fill: 'rgba(0,0,0,0)',
+    content: "",
+    fill: "rgba(0,0,0,0)",
     glyphs: [],
     height: textLine.stringHeight,
     id: `string_${sCounter++}`,
@@ -671,7 +721,7 @@ function newString(textLine, left, width) {
     lockSkewingX: true,
     lockSkewingY: true,
     lockUniScaling: false,
-    name: 'string',
+    name: "string",
     parent: textLine,
     right: left + width,
     stroke: stringColor,
@@ -683,7 +733,11 @@ function newString(textLine, left, width) {
 
   zoomObject(string, zoom);
 
-  console.log(`added ${string.id} to ${textLine.id} at ${string.left.toFixed(2)} , ${string.top.toFixed(2)} with w ${string.width.toFixed(2)}`);
+  console.log(
+    `added ${string.id} to ${textLine.id} at ${string.left.toFixed(
+      2
+    )} , ${string.top.toFixed(2)} with w ${string.width.toFixed(2)}`
+  );
 
   textLine.strings.push(string);
 
@@ -692,11 +746,16 @@ function newString(textLine, left, width) {
 }
 
 /**
-* Create a new glyph.
-* Assumes x is unzoomed.
-*/
+ * Create a new glyph.
+ * Assumes x is unzoomed.
+ */
 function newGlyph(string, x) {
-  let glyphPoints = [x, string.top / zoom, x, string.top / zoom+string.height];
+  let glyphPoints = [
+    x,
+    string.top / zoom,
+    x,
+    string.top / zoom + string.height,
+  ];
 
   let glyph = new fabric.Line(glyphPoints, {
     bottom: top + string.height,
@@ -713,14 +772,14 @@ function newGlyph(string, x) {
     lockSkewingX: true,
     lockSkewingY: true,
     lockUniScaling: true,
-    name: 'glyph',
+    name: "glyph",
     parent: string,
     right: glyphPoints[0],
     stroke: glyphColor,
     strokeWidth: glyphWidth,
     top: glyphPoints[1],
     topNoZoom: glyphPoints[1],
-  })
+  });
 
   zoomObject(glyph, zoom);
 
@@ -733,41 +792,41 @@ function newGlyph(string, x) {
 // Functions for sorting items.
 //==================================================================================
 function sortDescendents(element) {
-  if (element.name==="page") {
+  if (element.name === "page") {
     sortComposedBlocks();
     sortTextBlocks(element);
     sortIllustrations(element);
-    for (let i=0; i<element.composedBlocks.length; i++) {
+    for (let i = 0; i < element.composedBlocks.length; i++) {
       let composedBlock = element.composedBlocks[i];
       sortTextBlocks(composedBlock);
       sortIllustrations(composedBlock);
       sortGraphicalElements(composedBlock);
     }
-    for (let i=0; i<element.textBlocks.length; i++) {
+    for (let i = 0; i < element.textBlocks.length; i++) {
       let textBlock = element.textBlocks[i];
       sortDescendents(textBlock);
     }
-  } else if (element.name==="composedBlock") {
+  } else if (element.name === "composedBlock") {
     sortTextBlocks(element);
     sortIllustrations(element);
     sortGraphicalElements(element);
-    for (let i=0; i<element.textBlocks.length; i++) {
+    for (let i = 0; i < element.textBlocks.length; i++) {
       let textBlock = element.textBlocks[i];
       sortDescendents(textBlock);
     }
-  } else if (element.name==="textBlock") {
+  } else if (element.name === "textBlock") {
     sortTextLines(element);
-    for (let i=0; i<element.textLines.length; i++) {
+    for (let i = 0; i < element.textLines.length; i++) {
       let textLine = element.textLines[i];
       sortDescendents(textLine);
     }
-  } else if (element.name==="textLine") {
+  } else if (element.name === "textLine") {
     sortStrings(element);
-    for (let i=0; i<element.strings.length; i++) {
+    for (let i = 0; i < element.strings.length; i++) {
       let string = element.strings[i];
       sortDescendents(string);
     }
-  } else if (element.name==="string") {
+  } else if (element.name === "string") {
     sortGlyphs(element);
   }
 }
@@ -775,7 +834,7 @@ function sortDescendents(element) {
 function sortComposedBlocks() {
   let leftToRight = isLeftToRight(page);
   let composedBlocks = page.composedBlocks;
-  sortBlocksOnPage(composedBlocks, leftToRight)
+  sortBlocksOnPage(composedBlocks, leftToRight);
   page.composedBlocks = composedBlocks;
 }
 
@@ -790,7 +849,7 @@ The element can either be the page, in which case all text blocks are sorted, or
 function sortTextBlocks(element) {
   let leftToRight = isLeftToRight(element);
   let textBlocks = element.textBlocks;
-  if (element.name=="page") {
+  if (element.name == "page") {
     sortBlocksOnPage(textBlocks, leftToRight);
     element.textBlocks = textBlocks;
   } else {
@@ -815,23 +874,29 @@ function sortGraphicalElements(element) {
 Sort blocks taking into account vertical breaks.
 **/
 function sortBlocksOnPage(blocks, leftToRight) {
-  let topOrdered = blocks.map(function(x) { if (x.parent.name=="page") { return x } else { return x.parent }})
-  topOrdered = new Set(topOrdered)
-  topOrdered = Array.from(topOrdered)
-  topOrdered = topOrdered.sort(function(a, b) {
+  let topOrdered = blocks.map(function (x) {
+    if (x.parent.name == "page") {
+      return x;
+    } else {
+      return x.parent;
+    }
+  });
+  topOrdered = new Set(topOrdered);
+  topOrdered = Array.from(topOrdered);
+  topOrdered = topOrdered.sort(function (a, b) {
     if (a.top != b.top) return a.top - b.top;
     if (a.bottom != b.bottom) return a.bottom - b.bottom;
     if (a.left != b.left) return a.left - b.left;
     if (a.right != b.right) return a.right - b.right;
     return 0;
-  })
+  });
 
-  blocks.sort(function(a, b) {
+  blocks.sort(function (a, b) {
     let aObj = a;
     let bObj = b;
-    if ((a.parent!==page || b.parent!==page) && a.parent !== b.parent) {
-      if (a.parent!==page) aObj = a.parent;
-      if (b.parent!==page) bObj = b.parent;
+    if ((a.parent !== page || b.parent !== page) && a.parent !== b.parent) {
+      if (a.parent !== page) aObj = a.parent;
+      if (b.parent !== page) bObj = b.parent;
     }
 
     let topBlock = aObj;
@@ -842,20 +907,20 @@ function sortBlocksOnPage(blocks, leftToRight) {
     }
 
     let i;
-    for (i=0; i < topOrdered.length; i++) {
+    for (i = 0; i < topOrdered.length; i++) {
       if (topOrdered[i].top > topBlock.top) {
         break;
       }
     }
 
     let j;
-    for (j=i; j < topOrdered.length; j++) {
+    for (j = i; j < topOrdered.length; j++) {
       if (topOrdered[j].top >= bottomBlock.top) {
         break;
       }
     }
-    j = j-1;
-    if (j<i) {
+    j = j - 1;
+    if (j < i) {
       j = i;
     }
 
@@ -868,10 +933,15 @@ function sortBlocksOnPage(blocks, leftToRight) {
     //console.log(`verticalBreakCandidates: ${verticalBreakCandidates.map((x) => stringify(x))}`)
 
     let hasVerticalBreak = false;
-    for (i=0; i < verticalBreakCandidates.length; i++) {
+    for (i = 0; i < verticalBreakCandidates.length; i++) {
       let candidate = verticalBreakCandidates[i];
       //console.log(`candidate: ${stringify(candidate)}. htop ${horizontalOverlap(topBlock, candidate).toFixed(2)}, hbot ${horizontalOverlap(bottomBlock, candidate).toFixed(2)}, vtop ${verticalOverlap(topBlock, candidate).toFixed(2)}, vbot ${verticalOverlap(bottomBlock, candidate).toFixed(2)}`)
-      if (horizontalOverlap(topBlock, candidate) > 0 && horizontalOverlap(bottomBlock, candidate) && verticalOverlap(topBlock, candidate) == 0 && verticalOverlap(bottomBlock, candidate) == 0) {
+      if (
+        horizontalOverlap(topBlock, candidate) > 0 &&
+        horizontalOverlap(bottomBlock, candidate) &&
+        verticalOverlap(topBlock, candidate) == 0 &&
+        verticalOverlap(bottomBlock, candidate) == 0
+      ) {
         //console.log(`verticalbreak: ${stringify(candidate)}`)
         hasVerticalBreak = true;
         break;
@@ -959,39 +1029,54 @@ function verticalCompare(a, b, leftToRight) {
 
 function sortBlocks(elements, leftToRight) {
   if (leftToRight) {
-    elements.sort(function(a, b){
+    elements.sort(function (a, b) {
       let aObj = a;
       let bObj = b;
-      if ((a.parent!==page || b.parent!==page) && a.parent !== b.parent) {
-        if (a.parent!==page) aObj = a.parent;
-        if (b.parent!==page) bObj = b.parent;
+      if ((a.parent !== page || b.parent !== page) && a.parent !== b.parent) {
+        if (a.parent !== page) aObj = a.parent;
+        if (b.parent !== page) bObj = b.parent;
       }
 
       // if there is vertical overlap and little horizontal overlap, sort horizontally
-      let hOverlap = ((aObj.right < bObj.right ? aObj.right : bObj.right) - (aObj.left > bObj.left ? aObj.left : bObj.left)) /
+      let hOverlap =
+        ((aObj.right < bObj.right ? aObj.right : bObj.right) -
+          (aObj.left > bObj.left ? aObj.left : bObj.left)) /
         (aObj.width > bObj.width ? aObj.width * zoom : bObj.width * zoom);
-      if (aObj.topNoZoom < bObj.topNoZoom + bObj.height && bObj.topNoZoom < aObj.topNoZoom + aObj.height && hOverlap < 0.1 && aObj.left != bObj.left)
+      if (
+        aObj.topNoZoom < bObj.topNoZoom + bObj.height &&
+        bObj.topNoZoom < aObj.topNoZoom + aObj.height &&
+        hOverlap < 0.1 &&
+        aObj.left != bObj.left
+      )
         return aObj.left - bObj.left;
       if (aObj.top != bObj.top) return aObj.top - bObj.top;
       if (aObj.left != bObj.left) return aObj.left - bObj.left;
       return 0;
     });
   } else {
-    elements.sort(function(a, b){
+    elements.sort(function (a, b) {
       let aObj = a;
       let bObj = b;
-      if ((a.parent!==page || b.parent!==page) && a.parent !== b.parent) {
-        if (a.parent!==page) aObj = a.parent;
-        if (b.parent!==page) bObj = b.parent;
+      if ((a.parent !== page || b.parent !== page) && a.parent !== b.parent) {
+        if (a.parent !== page) aObj = a.parent;
+        if (b.parent !== page) bObj = b.parent;
       }
 
       // if there is vertical overlap and little horizontal overlap, sort horizontally
-      let hOverlap = ((aObj.right < bObj.right ? aObj.right : bObj.right) - (aObj.left > bObj.left ? aObj.left : bObj.left)) /
+      let hOverlap =
+        ((aObj.right < bObj.right ? aObj.right : bObj.right) -
+          (aObj.left > bObj.left ? aObj.left : bObj.left)) /
         (aObj.width > bObj.width ? aObj.width * zoom : bObj.width * zoom);
-      if (aObj.topNoZoom < bObj.topNoZoom + bObj.height && bObj.topNoZoom < aObj.topNoZoom + aObj.height && hOverlap < 0.1 && aObj.leftNoZoom+aObj.width != bObj.leftNoZoom+bObj.width)
-        return (bObj.leftNoZoom + bObj.width) - (aObj.leftNoZoom + aObj.width);
+      if (
+        aObj.topNoZoom < bObj.topNoZoom + bObj.height &&
+        bObj.topNoZoom < aObj.topNoZoom + aObj.height &&
+        hOverlap < 0.1 &&
+        aObj.leftNoZoom + aObj.width != bObj.leftNoZoom + bObj.width
+      )
+        return bObj.leftNoZoom + bObj.width - (aObj.leftNoZoom + aObj.width);
       if (aObj.top != bObj.top) return aObj.top - bObj.top;
-      if (aObj.leftNoZoom+aObj.width != bObj.leftNoZoom+bObj.width) return (bObj.leftNoZoom + bObj.width) - (aObj.leftNoZoom + aObj.width);
+      if (aObj.leftNoZoom + aObj.width != bObj.leftNoZoom + bObj.width)
+        return bObj.leftNoZoom + bObj.width - (aObj.leftNoZoom + aObj.width);
       return 0;
     });
   }
@@ -1002,13 +1087,13 @@ function sortTextLines(element) {
   let leftToRight = isLeftToRight(element);
   let textLines = element.textLines;
   if (leftToRight) {
-    textLines.sort(function(a,b){
+    textLines.sort(function (a, b) {
       if (a.top != b.top) return a.top - b.top;
       if (a.left != b.left) return a.left - b.left;
       return 0;
     });
   } else {
-    textLines.sort(function(a,b){
+    textLines.sort(function (a, b) {
       if (a.top != b.top) return a.top - b.top;
       if (a.left != b.left) return b.left - a.left;
       return 0;
@@ -1026,13 +1111,13 @@ function sortStrings(element) {
 
 function sortStringArray(strings, leftToRight) {
   if (leftToRight) {
-    strings.sort(function(a,b){
+    strings.sort(function (a, b) {
       if (a.left != b.left) return a.left - b.left;
       if (a.top != b.top) return a.top - b.top;
       return 0;
     });
   } else {
-    strings.sort(function(a,b){
+    strings.sort(function (a, b) {
       if (a.left != b.left) return b.left - a.left;
       if (a.top != b.top) return a.top - b.top;
       return 0;
@@ -1045,13 +1130,13 @@ function sortGlyphs(element) {
   let leftToRight = isLeftToRight(element);
   let glyphs = element.glyphs;
   if (leftToRight) {
-    glyphs.sort(function(a,b){
+    glyphs.sort(function (a, b) {
       if (a.left != b.left) return a.left - b.left;
       if (a.top != b.top) return a.top - b.top;
       return 0;
     });
   } else {
-    glyphs.sort(function(a,b){
+    glyphs.sort(function (a, b) {
       if (a.left != b.left) return b.left - a.left;
       if (a.top != b.top) return a.top - b.top;
       return 0;
@@ -1065,14 +1150,18 @@ function sortGlyphs(element) {
 //==================================================================================
 
 /**
-* Recalculate the size of all composed blocks.
-*/
+ * Recalculate the size of all composed blocks.
+ */
 function resizeComposedBlocks() {
   let toRemove = [];
-  for (let i=0; i<page.composedBlocks.length; i++) {
+  for (let i = 0; i < page.composedBlocks.length; i++) {
     let composedBlock = page.composedBlocks[i];
 
-    if (composedBlock.textBlocks.length===0 && composedBlock.illustrations.length===0 && composedBlock.graphicalElements.length===0) {
+    if (
+      composedBlock.textBlocks.length === 0 &&
+      composedBlock.illustrations.length === 0 &&
+      composedBlock.graphicalElements.length === 0
+    ) {
       toRemove.push(composedBlock);
       continue;
     }
@@ -1081,46 +1170,34 @@ function resizeComposedBlocks() {
     let right = 0;
     let top = Number.MAX_SAFE_INTEGER;
     let bottom = 0;
-    for (let j=0; j<composedBlock.textBlocks.length; j++) {
+    for (let j = 0; j < composedBlock.textBlocks.length; j++) {
       let tb = composedBlock.textBlocks[j];
       tb.right = tb.left + tb.width * zoom;
       tb.bottom = tb.top + tb.height * zoom;
-      if (tb.left < left)
-        left = tb.left;
-      if (tb.right > right)
-        right = tb.right;
-      if (tb.top < top)
-        top = tb.top;
-      if (tb.bottom > bottom)
-        bottom = tb.bottom;
+      if (tb.left < left) left = tb.left;
+      if (tb.right > right) right = tb.right;
+      if (tb.top < top) top = tb.top;
+      if (tb.bottom > bottom) bottom = tb.bottom;
     }
 
-    for (let j=0; j<composedBlock.illustrations.length; j++) {
+    for (let j = 0; j < composedBlock.illustrations.length; j++) {
       let il = composedBlock.illustrations[j];
       il.right = il.left + il.width * zoom;
       il.bottom = il.top + il.height * zoom;
-      if (il.left < left)
-        left = il.left;
-      if (il.right > right)
-        right = il.right;
-      if (il.top < top)
-        top = il.top;
-      if (il.bottom > bottom)
-        bottom = il.bottom;
+      if (il.left < left) left = il.left;
+      if (il.right > right) right = il.right;
+      if (il.top < top) top = il.top;
+      if (il.bottom > bottom) bottom = il.bottom;
     }
 
-    for (let j=0; j<composedBlock.graphicalElements.length; j++) {
+    for (let j = 0; j < composedBlock.graphicalElements.length; j++) {
       let ge = composedBlock.graphicalElements[j];
       ge.right = ge.left + ge.width * zoom;
       ge.bottom = ge.top + ge.height * zoom;
-      if (ge.left < left)
-        left = ge.left;
-      if (ge.right > right)
-        right = ge.right;
-      if (ge.top < top)
-        top = ge.top;
-      if (ge.bottom > bottom)
-        bottom = ge.bottom;
+      if (ge.left < left) left = ge.left;
+      if (ge.right > right) right = ge.right;
+      if (ge.top < top) top = ge.top;
+      if (ge.bottom > bottom) bottom = ge.bottom;
     }
 
     left -= 2;
@@ -1130,7 +1207,7 @@ function resizeComposedBlocks() {
 
     composedBlock.left = left;
     composedBlock.top = top;
-    composedBlock.width = (right - left) / zoom ;
+    composedBlock.width = (right - left) / zoom;
     composedBlock.height = (bottom - top) / zoom;
     composedBlock.leftNoZoom = left / zoom;
     composedBlock.topNoZoom = top / zoom;
@@ -1140,12 +1217,20 @@ function resizeComposedBlocks() {
     composedBlock.setCoords();
 
     sortTextBlocks(composedBlock);
-    console.log(`set ${composedBlock.id}: l ${composedBlock.left.toFixed(2)}, t ${composedBlock.top.toFixed(2)}, w ${composedBlock.width.toFixed(2)}, h ${composedBlock.height.toFixed(2)}`)
+    console.log(
+      `set ${composedBlock.id}: l ${composedBlock.left.toFixed(
+        2
+      )}, t ${composedBlock.top.toFixed(2)}, w ${composedBlock.width.toFixed(
+        2
+      )}, h ${composedBlock.height.toFixed(2)}`
+    );
   }
 
-  for (let i=0; i<toRemove.length; i++) {
+  for (let i = 0; i < toRemove.length; i++) {
     let composedBlock = toRemove[i];
-    page.composedBlocks = page.composedBlocks.filter(function(item) {return item!=composedBlock;});
+    page.composedBlocks = page.composedBlocks.filter(function (item) {
+      return item != composedBlock;
+    });
     canvas.remove(composedBlock);
   }
   sortComposedBlocks();
@@ -1155,27 +1240,30 @@ function resizeComposedBlocks() {
 }
 
 /**
-* Resize TextBlock size based on its contents.
-*/
+ * Resize TextBlock size based on its contents.
+ */
 function resizeTextBlock(textBlock) {
-  if (textBlock.textLines.length==0)
-    return;
+  if (textBlock.textLines.length == 0) return;
 
-  console.log(`before resize ${textBlock.id}: l ${textBlock.left.toFixed(2)}, t ${textBlock.top.toFixed(2)}, w ${textBlock.width.toFixed(2)}, h ${textBlock.height.toFixed(2)}`)
+  console.log(
+    `before resize ${textBlock.id}: l ${textBlock.left.toFixed(
+      2
+    )}, t ${textBlock.top.toFixed(2)}, w ${textBlock.width.toFixed(
+      2
+    )}, h ${textBlock.height.toFixed(2)}`
+  );
 
   let leftNoZoom = Number.MAX_SAFE_INTEGER;
   let rightNoZoom = 0;
   let topNoZoom = Number.MAX_SAFE_INTEGER;
   let bottomNoZoom = 0;
 
-  for (let i=0; i<textBlock.textLines.length; i++) {
+  for (let i = 0; i < textBlock.textLines.length; i++) {
     let textLine = textBlock.textLines[i];
-    if (textLine.leftNoZoom < leftNoZoom)
-      leftNoZoom = textLine.leftNoZoom;
+    if (textLine.leftNoZoom < leftNoZoom) leftNoZoom = textLine.leftNoZoom;
     if (textLine.leftNoZoom + textLine.width > rightNoZoom)
       rightNoZoom = textLine.leftNoZoom + textLine.width;
-    if (textLine.stringTop < topNoZoom)
-      topNoZoom = textLine.stringTop;
+    if (textLine.stringTop < topNoZoom) topNoZoom = textLine.stringTop;
     if (textLine.stringTop + textLine.stringHeight > bottomNoZoom)
       bottomNoZoom = textLine.stringTop + textLine.stringHeight;
   }
@@ -1191,31 +1279,38 @@ function resizeTextBlock(textBlock) {
   textBlock.dirty = true;
   textBlock.setCoords();
 
-  console.log(`after resize ${textBlock.id}: l ${textBlock.left.toFixed(2)}, t ${textBlock.top.toFixed(2)}, w ${textBlock.width.toFixed(2)}, h ${textBlock.height.toFixed(2)}`)
+  console.log(
+    `after resize ${textBlock.id}: l ${textBlock.left.toFixed(
+      2
+    )}, t ${textBlock.top.toFixed(2)}, w ${textBlock.width.toFixed(
+      2
+    )}, h ${textBlock.height.toFixed(2)}`
+  );
 }
 
 /**
-* Resize TextLine width based on its contents
-*/
+ * Resize TextLine width based on its contents
+ */
 function resizeTextLine(textLine) {
-  console.log(`before resize ${textLine.id}: l ${textLine.left.toFixed(2)}, t ${textLine.top.toFixed(2)}, w ${textLine.width.toFixed(2)}`)
+  console.log(
+    `before resize ${textLine.id}: l ${textLine.left.toFixed(
+      2
+    )}, t ${textLine.top.toFixed(2)}, w ${textLine.width.toFixed(2)}`
+  );
 
-  if (textLine.strings.length==0) {
+  if (textLine.strings.length == 0) {
     textLine.left = textLine.parent.left;
     textLine.leftNoZoom = textLine.parent.leftNoZoom;
     textLine.width = textLine.parent.width;
     textLine.right = textLine.parent.right;
-  }
-  else {
+  } else {
     let leftNoZoom = Number.MAX_SAFE_INTEGER;
     let rightNoZoom = 0;
-    for (let i=0; i<textLine.strings.length; i++) {
+    for (let i = 0; i < textLine.strings.length; i++) {
       let string = textLine.strings[i];
       stringRight = string.leftNoZoom + string.width;
-      if (string.leftNoZoom < leftNoZoom)
-        leftNoZoom = string.leftNoZoom;
-      if (stringRight > rightNoZoom)
-        rightNoZoom = stringRight;
+      if (string.leftNoZoom < leftNoZoom) leftNoZoom = string.leftNoZoom;
+      if (stringRight > rightNoZoom) rightNoZoom = stringRight;
     }
 
     textLine.leftNoZoom = leftNoZoom;
@@ -1225,26 +1320,30 @@ function resizeTextLine(textLine) {
   }
   textLine.dirty = true;
   textLine.setCoords();
-  console.log(`after resize ${textLine.id}: l ${textLine.left.toFixed(2)}, t ${textLine.top.toFixed(2)}, w ${textLine.width.toFixed(2)}`)
+  console.log(
+    `after resize ${textLine.id}: l ${textLine.left.toFixed(
+      2
+    )}, t ${textLine.top.toFixed(2)}, w ${textLine.width.toFixed(2)}`
+  );
 }
 
 /**
-* Recalculate the string top and string height for all strings in the text block.
-*/
+ * Recalculate the string top and string height for all strings in the text block.
+ */
 function recalculateStringHeight(textBlock) {
-  for (let i=0; i < textBlock.textLines.length; i++) {
+  for (let i = 0; i < textBlock.textLines.length; i++) {
     let textLine = textBlock.textLines[i];
 
-    if (i==0) {
+    if (i == 0) {
       // since we don't have a previous baseline at textLine zero, we "fake it",
       textLine.stringTop = textBlock.top / zoom;
-      textLine.stringHeight = (textLine.top - textBlock.top) * 1.25 / zoom;
+      textLine.stringHeight = ((textLine.top - textBlock.top) * 1.25) / zoom;
     } else {
-      let prevLine = textBlock.textLines[i-1];
+      let prevLine = textBlock.textLines[i - 1];
       textLine.stringTop = prevLine.stringTop + prevLine.stringHeight;
       textLine.stringHeight = (textLine.top - prevLine.top) / zoom;
     }
-    for (let j=0; j < textLine.strings.length; j++) {
+    for (let j = 0; j < textLine.strings.length; j++) {
       let string = textLine.strings[j];
 
       string.top = textLine.stringTop * zoom;
@@ -1254,7 +1353,7 @@ function recalculateStringHeight(textBlock) {
       string.dirty = true;
       string.setCoords();
 
-      for (let k=0; k < string.glyphs.length; k++) {
+      for (let k = 0; k < string.glyphs.length; k++) {
         let glyph = string.glyphs[k];
         glyph.top = string.top;
         glyph.topNoZoom = textLine.stringTop;
@@ -1267,29 +1366,93 @@ function recalculateStringHeight(textBlock) {
   }
 }
 
+/**
+ * Merge any strings with no spaces between them.
+ * */
+function mergeAdjacentStrings(page) {
+  for (let i = 0; i < page.textBlocks.length; i++) {
+    let textBlock = page.textBlocks[i];
+    mergeAdjacentTextBlockStrings(textBlock);
+  }
+}
+
+function mergeAdjacentTextBlockStrings(textBlock) {
+  for (let i = 0; i < textBlock.textLines.length; i++) {
+    let textLine = textBlock.textLines[i];
+    let leftToRight = isLeftToRight(textLine);
+
+    if (textLine.strings.length == 0) continue;
+
+    const combined = [];
+    let current = textLine.strings[0];
+
+    for (let j = 1; j < textLine.strings.length; j++) {
+      const next = textLine.strings[j];
+      const distance = leftToRight
+        ? next.leftNoZoom - (current.leftNoZoom + current.width)
+        : current.leftNoZoom - (next.leftNoZoom + next.width);
+      const isAdjacent = distance < adjacentStringMergeThreshold;
+
+      if (isAdjacent) {
+        console.log(
+          `Combining strings at distance ${distance}, ${current.content} with ${next.content}`
+        );
+
+        let midPoint = leftToRight
+          ? (current.leftNoZoom + current.width + next.leftNoZoom) / 2
+          : (next.leftNoZoom + next.width + current.leftNoZoom) / 2;
+        console.log(`adding glyph at ${midPoint}`);
+        newGlyph(current, midPoint);
+
+        if (leftToRight) {
+          current.width = Math.max(
+            current.width,
+            next.leftNoZoom + next.width - current.leftNoZoom
+          );
+        } else {
+          current.width = Math.max(
+            current.width,
+            current.leftNoZoom + current.width - next.leftNoZoom
+          );
+          current.leftNoZoom = next.leftNoZoom;
+        }
+        current.content += next.content;
+        current.glyphs = current.glyphs.concat(next.glyphs);
+
+        current.left = current.leftNoZoom * zoom;
+        sortGlyphs(current);
+
+        current.dirty = true;
+        current.setCoords();
+        canvas.remove(next);
+      } else {
+        combined.push(current);
+        current = next;
+      }
+    }
+    combined.push(current);
+    textLine.strings = combined;
+  }
+}
+
 function displayAttribute(attribute, value) {
   let display = value;
-  if (attribute==="fontSize") {
+  if (attribute === "fontSize") {
     display = fontSizeMap[value];
-    if (display==null)
-      display = value;
-  } else if (attribute==="layoutTag") {
+    if (display == null) display = value;
+  } else if (attribute === "layoutTag") {
     display = layoutTagMap[value];
-    if (display==null)
-      display = value;
-  } else if (attribute==="structureTag") {
+    if (display == null) display = value;
+  } else if (attribute === "structureTag") {
     display = structureTagMap[value];
-    if (display==null)
-      display = value;
+    if (display == null) display = value;
   }
   return display;
 }
 
 function getInheritedAttribute(element, attribute) {
-  if (element[attribute])
-    return element[attribute];
-  if (element.parent)
-    return getInheritedAttribute(element.parent, attribute);
+  if (element[attribute]) return element[attribute];
+  if (element.parent) return getInheritedAttribute(element.parent, attribute);
   return "";
 }
 
@@ -1301,8 +1464,10 @@ function isLeftToRight(element) {
 
 function stringify(element) {
   let content = "";
-  if (element.name=="composedBlock") {
-    content = element.textBlocks[0].textLines[0].strings[0].content
+  if (element.name == "composedBlock") {
+    content = element.textBlocks[0].textLines[0].strings[0].content;
   }
-  return `${element.name}(${element.left.toFixed(2)}, ${element.top.toFixed(2)}, ${element.right.toFixed(2)}, ${element.bottom.toFixed(2)}, ${content})`
+  return `${element.name}(${element.left.toFixed(2)}, ${element.top.toFixed(
+    2
+  )}, ${element.right.toFixed(2)}, ${element.bottom.toFixed(2)}, ${content})`;
 }
